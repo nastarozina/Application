@@ -30,4 +30,11 @@ public class BannerService {
         return banners.stream().map(banner -> new BannerResponse(banner.getName(), banner.getDescription()))
                 .collect(Collectors.toList());
     }
+
+    public Banner createBanner(BannerResponse banner) {
+        return repository.save(Banner.builder()
+                .name(banner.name())
+                .description(banner.description())
+                .build());
+    }
 }
