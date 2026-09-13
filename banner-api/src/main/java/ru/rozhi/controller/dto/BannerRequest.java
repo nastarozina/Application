@@ -1,7 +1,6 @@
 package ru.rozhi.controller.dto;
 
-public record BannerResponse(
-        String id,
+public record BannerRequest(
         String name,
         String description
 ) {}
