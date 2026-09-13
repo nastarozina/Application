@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mongodb.MongoDBContainer;
+import ru.rozhi.controller.dto.BannerRequest;
 import tools.jackson.core.type.TypeReference;
 import org.testcontainers.utility.DockerImageName;
 import ru.rozhi.controller.dto.BannerResponse;
@@ -56,10 +57,10 @@ public class BannerControllerTest {
     @Test
     @SneakyThrows
     void shouldReturnAllBanners() {
-        bannerRepository.save(Banner.builder().name("NAME1").description("DESCRIPTION1").build());
-        bannerRepository.save(Banner.builder().name("NAME2").description("DESCRIPTION2").build());
-        List<BannerResponse> expected = List.of(new BannerResponse("NAME1", "DESCRIPTION1"),
-                new BannerResponse("NAME2", "DESCRIPTION2"));
+        bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").build());
+        bannerRepository.save(Banner.builder().id("banner2").name("NAME2").description("DESCRIPTION2").build());
+        List<BannerResponse> expected = List.of(new BannerResponse("banner1", "NAME1", "DESCRIPTION1"),
+                new BannerResponse("banner2","NAME2", "DESCRIPTION2"));
 
         MvcResult result = mockMvc.perform(get("/"))
                 .andExpect(status().isOk())
@@ -76,7 +77,7 @@ public class BannerControllerTest {
     void shouldReturnBannerById() {
         bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").build());
         bannerRepository.save(Banner.builder().id("banner2").name("NAME2").description("DESCRIPTION2").build());
-        BannerResponse expected = new BannerResponse("NAME2", "DESCRIPTION2");
+        BannerResponse expected = new BannerResponse("banner2","NAME2", "DESCRIPTION2");
 
         MvcResult result = mockMvc.perform(get("/banner2"))
                 .andExpect(status().isOk())
@@ -97,8 +98,8 @@ public class BannerControllerTest {
 
     @Test
     @SneakyThrows
-    void should() {
-        BannerResponse bannerRequest = new BannerResponse("NAME2", "DESCRIPTION2");
+    void shouldCreateBannerAndReturnItById() {
+        BannerRequest bannerRequest = new BannerRequest("NAME2", "DESCRIPTION2");
         MvcResult resultOfPostRequest = mockMvc.perform(post("/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(bannerRequest))
@@ -110,14 +111,14 @@ public class BannerControllerTest {
         BannerResponse responseOfPostRequest =
                 objectMapper.readValue(resultOfPostRequest.getResponse().getContentAsString(), BannerResponse.class);
 
-        assertThat(responseOfPostRequest).isEqualTo(bannerRequest);
+        assertThat(responseOfPostRequest.id()).isNotNull();
+        assertThat(responseOfPostRequest.name()).isEqualTo(bannerRequest.name());
+        assertThat(responseOfPostRequest.description()).isEqualTo(bannerRequest.description());
 
-        String bannerUrl = resultOfPostRequest.getResponse().getHeader("Location");
-        String bannerId = bannerUrl.substring(bannerUrl.lastIndexOf("/") + 1);
-
-        Banner banner = bannerRepository.findById(bannerId).orElse(null);
+        Banner banner = bannerRepository.findById(responseOfPostRequest.id()).orElse(null);
         assertThat(banner).isNotNull();
 
+        String bannerUrl = resultOfPostRequest.getResponse().getHeader("Location");
         MvcResult resultOfGetRequest = mockMvc.perform(get(bannerUrl))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -125,6 +126,8 @@ public class BannerControllerTest {
         BannerResponse responseOfGetRequest =
                 objectMapper.readValue(resultOfGetRequest.getResponse().getContentAsString(), BannerResponse.class);
 
-        assertThat(responseOfGetRequest).isEqualTo(bannerRequest);
+        assertThat(responseOfGetRequest.id()).isNotNull();
+        assertThat(responseOfGetRequest.name()).isEqualTo(bannerRequest.name());
+        assertThat(responseOfGetRequest.description()).isEqualTo(bannerRequest.description());
     }
 }
