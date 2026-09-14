@@ -26,6 +26,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -129,5 +130,54 @@ public class BannerControllerTest {
         assertThat(responseOfGetRequest.id()).isNotNull();
         assertThat(responseOfGetRequest.name()).isEqualTo(bannerRequest.name());
         assertThat(responseOfGetRequest.description()).isEqualTo(bannerRequest.description());
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldUpdateBannerAndReturnIt() {
+        bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").build());
+
+        BannerRequest updateBannerRequest1 = new BannerRequest("  ", "DESCRIPTION2");
+        BannerResponse expected1 = new BannerResponse("banner1", "NAME1", "DESCRIPTION2");
+
+        BannerRequest updateBannerRequest2 = new BannerRequest("NAME2", null);
+        BannerResponse expected2 = new BannerResponse("banner1", "NAME2", "DESCRIPTION2");
+
+        MvcResult result1 = mockMvc.perform(
+                        put("/banner1")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(updateBannerRequest1))
+                )
+                .andExpect(status().isOk())
+                .andReturn();
+
+        BannerResponse response1 = objectMapper.readValue(result1.getResponse().getContentAsString(), BannerResponse.class);
+
+        assertThat(response1).isEqualTo(expected1);
+
+        MvcResult result2 = mockMvc.perform(
+                        put("/banner1")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(updateBannerRequest2))
+                )
+                .andExpect(status().isOk())
+                .andReturn();
+
+        BannerResponse response2 = objectMapper.readValue(result2.getResponse().getContentAsString(), BannerResponse.class);
+
+        assertThat(response2).isEqualTo(expected2);
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldReturn404WhenBannerToUpdateNotFound() {
+        BannerRequest updateBannerRequest = new BannerRequest("NAME1", "DESCRIPTION1");
+
+        mockMvc.perform(
+                        put("/banner1")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(updateBannerRequest))
+                )
+                .andExpect(status().isNotFound());
     }
 }

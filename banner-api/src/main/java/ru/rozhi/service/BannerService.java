@@ -37,4 +37,24 @@ public class BannerService {
 
         return MapperUtils.getBannerResponse(createdBanner);
     }
+
+    public BannerResponse updateBanner(String id, BannerRequest bannerToUpdate) {
+        Banner banner = repository.findById(id).orElse(null);
+
+        if (banner == null) {
+            return null;
+        }
+
+        if (bannerToUpdate.name() != null && !bannerToUpdate.name().isBlank()) {
+            banner.setName(bannerToUpdate.name());
+        }
+
+        if (bannerToUpdate.description() != null) {
+            banner.setDescription(bannerToUpdate.description());
+        }
+
+        banner = repository.save(banner);
+
+        return MapperUtils.getBannerResponse(banner);
+    }
 }
