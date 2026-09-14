@@ -24,6 +24,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -178,6 +179,29 @@ public class BannerControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(updateBannerRequest))
                 )
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldDeleteBannerById() {
+        bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").build());
+
+        mockMvc.perform(delete("/banner1"))
+                .andExpect(status().isOk());
+
+        Banner banner = bannerRepository.findById("banner1").orElse(null);
+        assertThat(banner).isNull();
+
+        mockMvc.perform(get("/banner1")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldReturn404WhenBannerToDeleteNotFound() {
+        bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").build());
+
+        mockMvc.perform(delete("/banner2"))
                 .andExpect(status().isNotFound());
     }
 }
