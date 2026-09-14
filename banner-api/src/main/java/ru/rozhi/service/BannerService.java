@@ -57,4 +57,14 @@ public class BannerService {
 
         return MapperUtils.getBannerResponse(banner);
     }
+
+    public boolean deleteBanner(String id) {
+        boolean isBannerExist = repository.existsById(id);
+        if (!isBannerExist) {
+            return false;
+        }
+
+        repository.deleteById(id);
+        return true;
+    }
 }
