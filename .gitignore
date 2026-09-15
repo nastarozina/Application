@@ -2,6 +2,7 @@ HELP.md
 .gradle
 build/
 !banner-api/gradle/wrapper/gradle-wrapper.jar
+!category-api/gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 

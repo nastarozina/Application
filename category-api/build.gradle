@@ -1,0 +1,57 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.1.1'
+	id 'io.spring.dependency-management' version '1.1.7'
+    id("pl.allegro.tech.build.axion-release") version "1.21.3"
+}
+
+repositories {
+    mavenCentral()
+}
+
+group = 'ru.rozhi'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
+}
+
+dependencies {
+    // spring
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+    // test
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-mongodb-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:testcontainers'
+    testImplementation 'org.testcontainers:testcontainers-mongodb'
+    testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+    testCompileOnly 'org.projectlombok:lombok'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+scmVersion {
+    repository {
+        directory.set(project.rootDir.parentFile.absolutePath)
+    }
+
+    tag {
+        prefix.set(project.name)
+        versionSeparator.set("-")
+    }
+
+    versionCreator('simple')
+}
+
+version = scmVersion.version
