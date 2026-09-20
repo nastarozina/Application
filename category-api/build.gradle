@@ -41,6 +41,10 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+test {
+    failOnNoDiscoveredTests = false
+}
+
 scmVersion {
     repository {
         directory.set(project.rootDir.parentFile.absolutePath)
