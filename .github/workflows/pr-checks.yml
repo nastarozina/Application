@@ -1,0 +1,108 @@
+name: Build changed projects
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  detect-projects:
+    name: Detect changed projects
+    runs-on: ubuntu-latest
+
+    outputs:
+      projects: ${{ steps.projects.outputs.projects }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed projects
+        id: projects
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+          changed_files=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+
+          echo "Changed files:"
+          echo "$changed_files"
+
+          projects=()
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+
+            project="${file%%/*}"
+
+            if [ -f "$project/build.gradle" ] || \
+               [ -f "$project/build.gradle.kts" ]; then
+              projects+=("$project")
+            fi
+          done <<< "$changed_files"
+
+          projects=$(printf '%s\n' "${projects[@]}" | sort -u | jq -R -s -c '
+            split("\n")
+            | map(select(length > 0))
+          ')
+
+          echo "Projects: $projects"
+
+          echo "projects=$projects" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build changed projects
+    needs: detect-projects
+    if: needs.detect-projects.outputs.projects != '[]'
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.detect-projects.outputs.projects) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Make gradlew executable
+        working-directory: ${{ matrix.project }}
+        run: chmod +x gradlew
+
+      - name: Build ${{ matrix.project }}
+        working-directory: ${{ matrix.project }}
+        run: ./gradlew build --no-daemon
+
+  build-result:
+    name: Build result
+    needs:
+      - detect-projects
+      - build
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check build result
+        run: |
+          if [ "${{ needs.detect-projects.result }}" != "success" ]; then
+            echo "Project detection failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.build.result }}" != "success" ] && \
+             [ "${{ needs.build.result }}" != "skipped" ]; then
+            echo "Build failed"
+            exit 1
+          fi
+          
+          echo "All checks passed"
