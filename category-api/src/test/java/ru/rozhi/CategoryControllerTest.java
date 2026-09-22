@@ -7,12 +7,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mongodb.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
+import ru.rozhi.controller.dto.CategoryRequest;
 import ru.rozhi.controller.dto.CategoryResponse;
 import ru.rozhi.repository.CategoryRepository;
 import ru.rozhi.repository.model.Category;
@@ -23,6 +25,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -52,7 +56,7 @@ public class CategoryControllerTest {
 
     @Test
     @SneakyThrows
-    void shouldReturnAllBanners() {
+    void shouldReturnAllCategories() {
         categoryRepository.save(Category.builder().id("category1").name("NAME1").build());
         categoryRepository.save(Category.builder().id("category2").name("NAME2").build());
         List<CategoryResponse> expected = List.of(new CategoryResponse("category1", "NAME1"),
@@ -70,7 +74,7 @@ public class CategoryControllerTest {
 
     @Test
     @SneakyThrows
-    void shouldReturnBannerById() {
+    void shouldReturnCategoryById() {
         categoryRepository.save(Category.builder().id("category1").name("NAME1").build());
         categoryRepository.save(Category.builder().id("category2").name("NAME2").build());
         CategoryResponse expected = new CategoryResponse("category2","NAME2");
@@ -87,8 +91,43 @@ public class CategoryControllerTest {
 
     @Test
     @SneakyThrows
-    void shouldReturn404WhenBannerNotFound() {
+    void shouldReturn404WhenCategoryNotFound() {
         categoryRepository.save(Category.builder().id("category1").name("NAME1").build());
         mockMvc.perform(get("/category2")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldCreateCategoryAndReturnItById() {
+        CategoryRequest categoryRequest = new CategoryRequest("NAME2");
+        MvcResult resultOfPostRequest =
+                mockMvc.perform(
+                                post("/")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(categoryRequest))
+                        )
+                        .andExpect(status().isCreated())
+                        .andExpect(header().exists("Location"))
+                        .andReturn();
+
+        CategoryResponse responseOfPostRequest =
+                objectMapper.readValue(resultOfPostRequest.getResponse().getContentAsString(), CategoryResponse.class);
+
+        assertThat(responseOfPostRequest.id()).isNotNull();
+        assertThat(responseOfPostRequest.name()).isEqualTo(categoryRequest.name());
+
+        Category category = categoryRepository.findById(responseOfPostRequest.id()).orElse(null);
+        assertThat(category).isNotNull();
+
+        String categoryUrl = resultOfPostRequest.getResponse().getHeader("Location");
+        MvcResult resultOfGetRequest = mockMvc.perform(get(categoryUrl))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        CategoryResponse responseOfGetRequest =
+                objectMapper.readValue(resultOfGetRequest.getResponse().getContentAsString(), CategoryResponse.class);
+
+        assertThat(responseOfGetRequest.id()).isNotNull();
+        assertThat(responseOfGetRequest.name()).isEqualTo(categoryRequest.name());
     }
 }

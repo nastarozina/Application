@@ -2,6 +2,7 @@ package ru.rozhi.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.rozhi.controller.dto.CategoryRequest;
 import ru.rozhi.controller.dto.CategoryResponse;
 import ru.rozhi.repository.CategoryRepository;
 import ru.rozhi.repository.model.Category;
@@ -28,5 +29,13 @@ public class CategoryService {
     public List<CategoryResponse> getAllCategories() {
         List<Category> banners = repository.findAll();
         return banners.stream().map(MapperUtils::getCategoryResponse).collect(Collectors.toList());
+    }
+
+    public CategoryResponse createCategory(CategoryRequest category) {
+        Category createdBanner =  repository.save(Category.builder()
+                .name(category.name())
+                .build());
+
+        return MapperUtils.getCategoryResponse(createdBanner);
     }
 }
