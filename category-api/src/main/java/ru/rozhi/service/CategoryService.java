@@ -38,4 +38,19 @@ public class CategoryService {
 
         return MapperUtils.getCategoryResponse(createdBanner);
     }
+
+    public CategoryResponse updateCategory(String id, CategoryRequest categoryToUpdate) {
+        Category category = repository.findById(id).orElse(null);
+
+        if (category == null) {
+            return null;
+        }
+
+        if (categoryToUpdate.name() != null && !categoryToUpdate.name().isBlank()) {
+            category.setName(categoryToUpdate.name());
+        }
+
+        category = repository.save(category);
+        return MapperUtils.getCategoryResponse(category);
+    }
 }
