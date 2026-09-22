@@ -3,6 +3,7 @@ package ru.rozhi.controller;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -59,5 +60,13 @@ public class CategoryController {
         }
 
         return ResponseEntity.ok(category);
+    }
+
+    @DeleteMapping(CATEGORY_PATH)
+    public ResponseEntity<@NonNull CategoryResponse> deleteCategory(@PathVariable String id) {
+        if (!categoryService.deleteCategory(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok().build();
     }
 }

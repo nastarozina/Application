@@ -24,6 +24,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -181,4 +182,26 @@ public class CategoryControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    @SneakyThrows
+    void shouldDeleteCategoryById() {
+        categoryRepository.save(Category.builder().id("category1").name("NAME1").build());
+
+        mockMvc.perform(delete("/category1"))
+                .andExpect(status().isOk());
+
+        Category category = categoryRepository.findById("category1").orElse(null);
+        assertThat(category).isNull();
+
+        mockMvc.perform(get("/category1")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldReturn404WhenCategoryToDeleteNotFound() {
+        categoryRepository.save(Category.builder().id("category1").name("NAME1").build());
+
+        mockMvc.perform(delete("/category2"))
+                .andExpect(status().isNotFound());
+    }
 }

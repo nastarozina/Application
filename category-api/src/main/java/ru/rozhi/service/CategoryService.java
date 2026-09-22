@@ -53,4 +53,14 @@ public class CategoryService {
         category = repository.save(category);
         return MapperUtils.getCategoryResponse(category);
     }
+
+    public boolean deleteCategory(String id) {
+        boolean isCategoryExist = repository.existsById(id);
+        if (!isCategoryExist) {
+            return false;
+        }
+
+        repository.deleteById(id);
+        return true;
+    }
 }
