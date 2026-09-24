@@ -1,8 +1,15 @@
+buildscript {
+    ext {
+        springBootVersion = '4.1.1'
+        javaVersion = 25
+    }
+}
+
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '4.1.1'
-	id 'io.spring.dependency-management' version '1.1.7'
-    id("pl.allegro.tech.build.axion-release") version "1.21.3"
+    id 'java'
+    id 'org.springframework.boot' version "${springBootVersion}"
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'pl.allegro.tech.build.axion-release' version '1.21.3'
 }
 
 repositories {
@@ -12,25 +19,28 @@ repositories {
 group = 'ru.rozhi'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(25)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(javaVersion)
+    }
 }
 
 dependencies {
+    implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:${springBootVersion}")
+
     // spring
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
-
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
 
     // test
-	testImplementation 'org.springframework.boot:spring-boot-starter-data-mongodb-test'
-	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-mongodb-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
     testImplementation 'org.testcontainers:testcontainers'
     testImplementation 'org.testcontainers:testcontainers-mongodb'
+    testImplementation 'com.adobe.testing:s3mock-testcontainers:5.2.2'
     testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -38,7 +48,7 @@ dependencies {
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
 }
 
 scmVersion {
