@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.rozhi.controller.dto.BannerRequest;
 import ru.rozhi.controller.dto.BannerResponse;
+import ru.rozhi.controller.exception.BannerNotFoundException;
 import ru.rozhi.repository.BannerRepository;
 import ru.rozhi.repository.model.Banner;
 import ru.rozhi.utils.MapperUtils;
@@ -18,8 +19,8 @@ public class BannerService {
     private BannerRepository repository;
 
     public BannerResponse getBannerById(String id) {
-        Banner banner = repository.findById(id).orElse(null);
-        if (banner == null) return null;
+        Banner banner = repository.findById(id)
+                .orElseThrow(() -> new BannerNotFoundException(id));
 
         return MapperUtils.getBannerResponse(banner);
     }
@@ -39,11 +40,8 @@ public class BannerService {
     }
 
     public BannerResponse updateBanner(String id, BannerRequest bannerToUpdate) {
-        Banner banner = repository.findById(id).orElse(null);
-
-        if (banner == null) {
-            return null;
-        }
+        Banner banner = repository.findById(id)
+                .orElseThrow(() -> new BannerNotFoundException(id));
 
         if (bannerToUpdate.name() != null && !bannerToUpdate.name().isBlank()) {
             banner.setName(bannerToUpdate.name());
@@ -58,13 +56,12 @@ public class BannerService {
         return MapperUtils.getBannerResponse(banner);
     }
 
-    public boolean deleteBanner(String id) {
+    public void deleteBanner(String id) {
         boolean isBannerExist = repository.existsById(id);
         if (!isBannerExist) {
-            return false;
+            throw new BannerNotFoundException(id);
         }
 
         repository.deleteById(id);
-        return true;
     }
 }
