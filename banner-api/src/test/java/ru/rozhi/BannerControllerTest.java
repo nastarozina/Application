@@ -61,8 +61,10 @@ public class BannerControllerTest {
     void shouldReturnAllBanners() {
         bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").build());
         bannerRepository.save(Banner.builder().id("banner2").name("NAME2").description("DESCRIPTION2").build());
-        List<BannerResponse> expected = List.of(new BannerResponse("banner1", "NAME1", "DESCRIPTION1"),
-                new BannerResponse("banner2","NAME2", "DESCRIPTION2"));
+        List<BannerResponse> expected = List.of(
+                new BannerResponse("banner1", "NAME1", "DESCRIPTION1", List.of()),
+                new BannerResponse("banner2","NAME2", "DESCRIPTION2", List.of())
+        );
 
         MvcResult result = mockMvc.perform(get("/"))
                 .andExpect(status().isOk())
@@ -79,7 +81,7 @@ public class BannerControllerTest {
     void shouldReturnBannerById() {
         bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").build());
         bannerRepository.save(Banner.builder().id("banner2").name("NAME2").description("DESCRIPTION2").build());
-        BannerResponse expected = new BannerResponse("banner2","NAME2", "DESCRIPTION2");
+        BannerResponse expected = new BannerResponse("banner2","NAME2", "DESCRIPTION2", List.of());
 
         MvcResult result = mockMvc.perform(get("/banner2"))
                 .andExpect(status().isOk())
@@ -102,13 +104,15 @@ public class BannerControllerTest {
     @SneakyThrows
     void shouldCreateBannerAndReturnItById() {
         BannerRequest bannerRequest = new BannerRequest("NAME2", "DESCRIPTION2");
-        MvcResult resultOfPostRequest = mockMvc.perform(post("/")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(bannerRequest))
-                )
-                .andExpect(status().isCreated())
-                .andExpect(header().exists("Location"))
-                .andReturn();
+        MvcResult resultOfPostRequest =
+                mockMvc.perform(
+                                post("/")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(objectMapper.writeValueAsString(bannerRequest))
+                        )
+                        .andExpect(status().isCreated())
+                        .andExpect(header().exists("Location"))
+                        .andReturn();
 
         BannerResponse responseOfPostRequest =
                 objectMapper.readValue(resultOfPostRequest.getResponse().getContentAsString(), BannerResponse.class);
@@ -136,16 +140,17 @@ public class BannerControllerTest {
     @Test
     @SneakyThrows
     void shouldUpdateBannerAndReturnIt() {
-        bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").build());
+        String bannerId = "banner1";
+        bannerRepository.save(Banner.builder().id(bannerId).name("NAME1").description("DESCRIPTION1").build());
 
         BannerRequest updateBannerRequest1 = new BannerRequest("  ", "DESCRIPTION2");
-        BannerResponse expected1 = new BannerResponse("banner1", "NAME1", "DESCRIPTION2");
+        BannerResponse expected1 = new BannerResponse(bannerId, "NAME1", "DESCRIPTION2", List.of());
 
         BannerRequest updateBannerRequest2 = new BannerRequest("NAME2", null);
-        BannerResponse expected2 = new BannerResponse("banner1", "NAME2", "DESCRIPTION2");
+        BannerResponse expected2 = new BannerResponse(bannerId, "NAME2", "DESCRIPTION2", List.of());
 
         MvcResult result1 = mockMvc.perform(
-                        put("/banner1")
+                        put("/{bannerId}", bannerId)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(updateBannerRequest1))
                 )
@@ -157,7 +162,7 @@ public class BannerControllerTest {
         assertThat(response1).isEqualTo(expected1);
 
         MvcResult result2 = mockMvc.perform(
-                        put("/banner1")
+                        put("/{bannerId}", bannerId)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(updateBannerRequest2))
                 )
