@@ -39,7 +39,7 @@ public class BannerControllerTest {
     @Container
     @ServiceConnection
     static MongoDBContainer mongoDBContainer = new MongoDBContainer(
-            DockerImageName.parse("mongo:7.0.0") // Укажите актуальную версию образа
+            DockerImageName.parse("mongo:8.3.11")
     );
 
     @Autowired
