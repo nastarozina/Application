@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.rozhi.controller.dto.CategoryRequest;
 import ru.rozhi.controller.dto.CategoryResponse;
+import ru.rozhi.exception.CategoryNotFoundException;
 import ru.rozhi.repository.CategoryRepository;
 import ru.rozhi.repository.model.Category;
 import ru.rozhi.utils.MapperUtils;
@@ -18,33 +19,28 @@ public class CategoryService {
     private CategoryRepository repository;
 
     public CategoryResponse getCategoryById(String id) {
-        Category banner = repository.findById(id).orElse(null);
-        if (banner == null) {
-            return null;
-        }
+        Category category = repository.findById(id)
+                .orElseThrow(() -> new CategoryNotFoundException(id));
 
-        return MapperUtils.getCategoryResponse(banner);
+        return MapperUtils.getCategoryResponse(category);
     }
 
     public List<CategoryResponse> getAllCategories() {
-        List<Category> banners = repository.findAll();
-        return banners.stream().map(MapperUtils::getCategoryResponse).collect(Collectors.toList());
+        List<Category> categories = repository.findAll();
+        return categories.stream().map(MapperUtils::getCategoryResponse).collect(Collectors.toList());
     }
 
     public CategoryResponse createCategory(CategoryRequest category) {
-        Category createdBanner =  repository.save(Category.builder()
+        Category createdCategory =  repository.save(Category.builder()
                 .name(category.name())
                 .build());
 
-        return MapperUtils.getCategoryResponse(createdBanner);
+        return MapperUtils.getCategoryResponse(createdCategory);
     }
 
     public CategoryResponse updateCategory(String id, CategoryRequest categoryToUpdate) {
-        Category category = repository.findById(id).orElse(null);
-
-        if (category == null) {
-            return null;
-        }
+        Category category = repository.findById(id)
+                .orElseThrow(() -> new CategoryNotFoundException(id));
 
         if (categoryToUpdate.name() != null && !categoryToUpdate.name().isBlank()) {
             category.setName(categoryToUpdate.name());
@@ -54,13 +50,12 @@ public class CategoryService {
         return MapperUtils.getCategoryResponse(category);
     }
 
-    public boolean deleteCategory(String id) {
+    public void deleteCategory(String id) {
         boolean isCategoryExist = repository.existsById(id);
         if (!isCategoryExist) {
-            return false;
+            throw new CategoryNotFoundException(id);
         }
 
         repository.deleteById(id);
-        return true;
     }
 }

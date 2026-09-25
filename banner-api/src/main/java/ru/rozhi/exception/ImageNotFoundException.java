@@ -1,4 +1,4 @@
-package ru.rozhi.controller.exception;
+package ru.rozhi.exception;
 
 public class ImageNotFoundException extends ResourceNotFoundException {
 
