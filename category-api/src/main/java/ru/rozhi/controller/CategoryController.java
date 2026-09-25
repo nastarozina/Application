@@ -27,12 +27,8 @@ public class CategoryController {
     private CategoryService categoryService;
 
     @GetMapping(CATEGORY_PATH)
-    public ResponseEntity<@NonNull CategoryResponse> getCategoryById(@PathVariable String id) {
-        CategoryResponse banner = categoryService.getCategoryById(id);
-        if (banner == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(banner);
+    public CategoryResponse getCategoryById(@PathVariable String id) {
+        return categoryService.getCategoryById(id);
     }
 
     @GetMapping
@@ -53,20 +49,12 @@ public class CategoryController {
     }
 
     @PutMapping(CATEGORY_PATH)
-    public ResponseEntity<@NonNull CategoryResponse> updateCategory(@PathVariable String id, @RequestBody CategoryRequest categoryToUpdate) {
-        CategoryResponse category = categoryService.updateCategory(id, categoryToUpdate);
-        if (category == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        return ResponseEntity.ok(category);
+    public CategoryResponse updateCategory(@PathVariable String id, @RequestBody CategoryRequest categoryToUpdate) {
+        return categoryService.updateCategory(id, categoryToUpdate);
     }
 
     @DeleteMapping(CATEGORY_PATH)
-    public ResponseEntity<@NonNull CategoryResponse> deleteCategory(@PathVariable String id) {
-        if (!categoryService.deleteCategory(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok().build();
+    public void deleteCategory(@PathVariable String id) {
+        categoryService.deleteCategory(id);
     }
 }

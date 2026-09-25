@@ -14,6 +14,9 @@ plugins {
 
 repositories {
     mavenCentral()
+    maven {
+        url = 'https://jitpack.io'
+    }
 }
 
 group = 'ru.rozhi'
@@ -45,6 +48,8 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
+
+    implementation 'com.github.nastarozina:error-handling-starter:1.0.3'
 }
 
 tasks.named('test') {

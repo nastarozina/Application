@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.rozhi.controller.dto.BannerRequest;
 import ru.rozhi.controller.dto.BannerResponse;
-import ru.rozhi.controller.exception.BannerNotFoundException;
+import ru.rozhi.exception.BannerNotFoundException;
 import ru.rozhi.repository.BannerRepository;
 import ru.rozhi.repository.model.Banner;
 import ru.rozhi.utils.MapperUtils;

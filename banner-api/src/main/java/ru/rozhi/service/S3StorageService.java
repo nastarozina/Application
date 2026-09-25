@@ -3,7 +3,7 @@ package ru.rozhi.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.rozhi.configuration.StorageProperties;
-import ru.rozhi.controller.exception.NoImageUploadedException;
+import ru.rozhi.exception.NoImageUploadedException;
 import ru.rozhi.service.dto.UploadedImageInfo;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
