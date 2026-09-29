@@ -8,7 +8,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Document(collection = "banners")
 @Data
 @Builder
@@ -20,6 +19,8 @@ public class Banner{
     private String name;
 
     private String description;
+
+    private String categoryId;
 
     @Builder.Default
     private List<Image> images = new ArrayList<>();
