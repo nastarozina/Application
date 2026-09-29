@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ru.rozhi.controller.dto.CategoryRequest;
@@ -17,6 +18,7 @@ import ru.rozhi.service.CategoryService;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 public class CategoryController {
@@ -34,6 +36,11 @@ public class CategoryController {
     @GetMapping
     public List<CategoryResponse> getAllCategories() {
         return categoryService.getAllCategories();
+    }
+
+    @GetMapping("/names")
+    public Map<String, String> getCategoriesNames(@RequestParam List<String> categoriesId) {
+        return categoryService.getCategoriesNames(categoriesId);
     }
 
     @PostMapping
