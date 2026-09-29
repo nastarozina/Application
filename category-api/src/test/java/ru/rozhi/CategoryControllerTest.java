@@ -22,6 +22,7 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -96,6 +97,23 @@ public class CategoryControllerTest {
     void shouldReturn404WhenCategoryNotFound() {
         categoryRepository.save(Category.builder().id("category1").name("NAME1").build());
         mockMvc.perform(get("/category2")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldReturnCategoriesNamesByIds() {
+        categoryRepository.save(Category.builder().id("1").name("NAME1").build());
+        categoryRepository.save(Category.builder().id("2").name("NAME2").build());
+        Map<String, String> expected = Map.of( "1", "NAME1", "2", "NAME2");
+
+        MvcResult result = mockMvc.perform(get("/names?categoriesId=1&categoriesId=2"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        Map<String, String> response =
+                objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
+
+        assertThat(response).isEqualTo(expected);
     }
 
     @Test

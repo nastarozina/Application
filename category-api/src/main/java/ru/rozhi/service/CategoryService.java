@@ -10,6 +10,7 @@ import ru.rozhi.repository.model.Category;
 import ru.rozhi.utils.MapperUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +29,15 @@ public class CategoryService {
     public List<CategoryResponse> getAllCategories() {
         List<Category> categories = repository.findAll();
         return categories.stream().map(MapperUtils::getCategoryResponse).collect(Collectors.toList());
+    }
+
+    public Map<String, String> getCategoriesNames(List<String> categoryIds) {
+        return repository.findAllById(categoryIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        Category::getId,
+                        Category::getName
+                ));
     }
 
     public CategoryResponse createCategory(CategoryRequest category) {

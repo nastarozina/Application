@@ -6,11 +6,12 @@ import ru.rozhi.repository.model.Banner;
 import ru.rozhi.repository.model.Image;
 
 public class MapperUtils {
-    public static BannerResponse getBannerResponse(Banner banner) {
+    public static BannerResponse getBannerResponse(Banner banner, String category) {
         return new BannerResponse(
                 banner.getId(),
                 banner.getName(),
                 banner.getDescription(),
+                category,
                 banner.getImages().stream().map(MapperUtils::getImageDto).toList()
         );
     }
