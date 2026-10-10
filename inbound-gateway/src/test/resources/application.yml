@@ -1,0 +1,89 @@
+server:
+  port: 8080
+  tomcat:
+    threads:
+      max: 200
+
+spring:
+  application:
+    name: inbound-gateway
+
+  threads:
+    virtual:
+      enabled: true
+
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: auth-gateway
+              uri: http://localhost:${wiremock.server.port}
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=2
+
+            - id: user-gateway
+              uri: http://localhost:${wiremock.server.port}
+              predicates:
+                - Path=/api/user/**
+              filters:
+                - StripPrefix=2
+
+            - id: banner-gateway
+              uri: http://localhost:${wiremock.server.port}
+              predicates:
+                - Path=/api/banner/**
+              filters:
+                - StripPrefix=2
+
+            - id: category-gateway
+              uri: http://localhost:${wiremock.server.port}
+              predicates:
+                - Path=/api/category/**
+              filters:
+                - StripPrefix=2
+
+            - id: admin-gateway
+              uri: http://localhost:${wiremock.server.port}
+              predicates:
+                - Path=/api/admin/**
+              filters:
+                - StripPrefix=2
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://keycloak.example.com/realms/myapp
+          jwk-set-uri: https://keycloak.example.com/realms/myapp/protocol/openid-connect/certs
+
+# Конфигурация правил авторизации
+security:
+  default-access: authenticated
+  routes:
+    # Публичные
+    - paths: /api/auth/**
+      access: permit
+    - paths: /actuator/health
+      access: permit
+    - paths: /actuator/info
+      access: permit
+
+    - paths: /api/admin/**
+      access: "role:ADMIN"
+
+    # Публичный GET для объявлений
+    - paths: /api/banner/**
+      access: permit
+      methods: GET
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+logging:
+  level:
+    root: DEBUG
