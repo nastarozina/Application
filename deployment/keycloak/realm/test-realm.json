@@ -1,0 +1,78 @@
+{
+  "realm": "test",
+  "enabled": true,
+
+  "displayName": "Test Realm",
+
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "verifyEmail": false,
+
+  "sslRequired": "none",
+
+  "clients": [
+    {
+      "clientId": "auth-api",
+      "name": "Auth API",
+      "enabled": true,
+
+      "protocol": "openid-connect",
+
+      "publicClient": false,
+      "bearerOnly": false,
+
+      "clientAuthenticatorType": "client-secret",
+      "secret": "test-secret",
+
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+
+      "redirectUris": [],
+      "webOrigins": []
+    },
+
+    {
+      "clientId": "frontend",
+      "name": "Frontend",
+      "enabled": true,
+
+      "protocol": "openid-connect",
+
+      "publicClient": true,
+      "bearerOnly": false,
+
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "https://oauth.pstmn.io/v1/callback"
+      ],
+
+      "webOrigins": [
+        "http://localhost:3000"
+      ]
+    }
+  ],
+
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Regular user"
+      },
+      {
+        "name": "admin",
+        "description": "Administrator"
+      }
+    ]
+  }
+}
