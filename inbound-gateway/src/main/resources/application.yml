@@ -1,0 +1,86 @@
+server:
+  port: ${SERVER_PORT:8080}
+  tomcat:
+    threads:
+      max: 200
+
+spring:
+  application:
+    name: inbound-gateway
+
+  threads:
+    virtual:
+      enabled: true
+
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: keycloak-gateway
+              uri: http://keycloak
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=2
+
+            - id: minio-gateway
+              uri: http://minio
+              predicates:
+                - Path=/api/s3/**
+              filters:
+                - StripPrefix=2
+
+            #            - id: user-gateway
+            #              uri: http://user-api
+            #              predicates:
+            #                - Path=/api/user/**
+            #              filters:
+            #                - StripPrefix=2
+
+            - id: banner-gateway
+              uri: http://banner-api
+              predicates:
+                - Path=/api/banner/**
+              filters:
+                - StripPrefix=2
+
+            - id: category-gateway
+              uri: http://category-api
+              predicates:
+                - Path=/api/category/**
+              filters:
+                - StripPrefix=2
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${ISSUER_URI:http://localhost:8080/api/auth/realms/test}
+          jwk-set-uri: ${JWK_SET_URI:http://keycloak/realms/test/protocol/openid-connect/certs}
+
+# Конфигурация правил авторизации
+security:
+  default-access: permit
+#  routes:
+#    # Публичные
+#    - paths: /api/auth/**
+#      access: permit
+#    - paths: /actuator/health
+#      access: permit
+#    - paths: /actuator/info
+#      access: permit
+#
+#    - paths: /api/admin/**
+#      access: "role:ADMIN"
+#
+#    # Публичный GET для объявлений
+#    - paths: /api/banner/**
+#      access: permit
+#      methods: GET
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

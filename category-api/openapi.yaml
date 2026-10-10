@@ -1,0 +1,168 @@
+openapi: 3.0.3
+
+info:
+  title: Category API
+  version: 1.0.0
+  description: API для работы с категориями
+
+tags:
+  - name: Categories
+    description: Операции с категориями
+
+paths:
+  /api/category:
+    get:
+      tags:
+        - Categories
+      summary: Получить все категории
+      operationId: getAllCategories
+      responses:
+        '200':
+          description: Список категорий успешно получен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryResponse'
+
+    post:
+      tags:
+        - Categories
+      summary: Создать категорию
+      operationId: createCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '201':
+          description: Категория успешно создана
+          headers:
+            Location:
+              description: URI созданной категории
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '400':
+          description: Некорректный запрос
+
+  /api/category/names:
+    get:
+      tags:
+        - Categories
+      summary: Получить имена категорий по ID
+      operationId: getCategoriesNames
+      parameters:
+        - name: categoriesId
+          in: query
+          required: true
+          description: Список ID категорий
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+      responses:
+        '200':
+          description: Список имен категорий успешно получен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              example:
+                - Фрукты
+                - Овощи
+
+  /api/category/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Идентификатор категории
+        schema:
+          type: string
+
+    get:
+      tags:
+        - Categories
+      summary: Получить категорию по ID
+      operationId: getCategoryById
+      responses:
+        '200':
+          description: Категория получена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '404':
+          description: Категория не найдена
+
+    put:
+      tags:
+        - Categories
+      summary: Обновить категорию
+      operationId: updateCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '200':
+          description: Категория успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        '404':
+          description: Категория не найдена
+
+    delete:
+      tags:
+        - Categories
+      summary: Удалить категорию
+      operationId: deleteCategory
+      responses:
+        '200':
+          description: Категория успешно удалена
+        '404':
+          description: Категория не найдена
+
+components:
+  schemas:
+    CategoryRequest:
+      type: object
+      description: Данные для создания или обновления категории
+      properties:
+        name:
+          type: string
+          example: Фрукты
+        parentId:
+          type: string
+          example: category-0
+
+
+    CategoryResponse:
+      type: object
+      description: Данные категории
+      properties:
+        id:
+          type: string
+          example: category-1
+        name:
+          type: string
+          example: Фрукты
+        parentId:
+          type: string
+          example: category-0

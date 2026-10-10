@@ -1,0 +1,255 @@
+openapi: 3.0.3
+
+info:
+  title: Banner API
+  version: 1.0.0
+  description: API для управления баннерами
+
+tags:
+  - name: Banners
+    description: Операции с баннерами
+
+paths:
+  /api/banner:
+    get:
+      tags:
+        - Banners
+      summary: Получить все баннеры
+      operationId: getAllBanners
+      responses:
+        '200':
+          description: Список баннеров успешно получен
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BannerResponse'
+
+    post:
+      tags:
+        - Banners
+      summary: Создать баннер
+      operationId: createBanner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BannerRequest'
+      responses:
+        '201':
+          description: Баннер успешно создан
+          headers:
+            Location:
+              description: URI созданного баннера
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BannerResponse'
+        '400':
+          description: Некорректный запрос
+
+  /api/banner/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Идентификатор баннера
+        schema:
+          type: string
+
+    get:
+      tags:
+        - Banners
+      summary: Получить баннер по ID
+      operationId: getBannerById
+      responses:
+        '200':
+          description: Баннер получен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BannerResponse'
+        '404':
+          description: Баннер не найден
+
+    put:
+      tags:
+        - Banners
+      summary: Обновить баннер
+      operationId: updateBanner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BannerRequest'
+      responses:
+        '200':
+          description: Баннер успешно обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BannerResponse'
+        '404':
+          description: Баннер не найден
+
+    delete:
+      tags:
+        - Banners
+      summary: Удалить баннер
+      operationId: deleteBanner
+      responses:
+        '200':
+          description: Баннер успешно удалён
+        '404':
+          description: Баннер не найден
+
+  /api/banner/{bannerId}/images/upload-url:
+    post:
+      tags:
+        - Banner images
+      summary: Получить URL для загрузки изображения
+      operationId: createUploadUrl
+      parameters:
+        - name: bannerId
+          in: path
+          required: true
+          description: Идентификатор баннера
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadUrlRequest'
+      responses:
+        '200':
+          description: URL для загрузки успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '404':
+          description: Баннер не найден
+
+  /api/banner/{bannerId}/images/{imageId}/complete:
+    post:
+      tags:
+        - Banner images
+      summary: Подтвердить завершение загрузки изображения
+      operationId: completeUpload
+      parameters:
+        - name: bannerId
+          in: path
+          required: true
+          description: Идентификатор баннера
+          schema:
+            type: string
+        - name: imageId
+          in: path
+          required: true
+          description: Идентификатор изображения
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Загрузка изображения подтверждена
+        '400':
+          description: |
+            Возможные причины ошибки:
+            - Размер загруженного изображения <= 0.
+            - Загрузка изображений этого типа не разрешена.
+        '404':
+          description: Баннер или изображение не найдены
+
+components:
+  schemas:
+    BannerRequest:
+      type: object
+      description: Данные для создания или обновления баннера
+      properties:
+        name:
+          type: string
+          example: Ящик абрикосов
+        price:
+          type: integer
+          example: 500
+        description:
+          type: string
+          example: Скидка до 50 процентов
+        categoryId:
+          type: string
+          example: category-1
+
+    BannerResponse:
+      type: object
+      description: Данные баннера
+      properties:
+        id:
+          type: string
+          example: banner-1
+        name:
+          type: string
+          example: Ящик абрикосов
+        price:
+          type: integer
+          example: 500
+        description:
+          type: string
+          example: Скидка до 50 процентов
+        categoryName:
+          type: string
+          example: Фрукты
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageDto'
+
+    ImageDto:
+      type: object
+      description: Данные изображения баннера
+      properties:
+        id:
+          type: string
+          example: image-1
+        objectKey:
+          type: string
+          example: banner-1/image-1
+        contentType:
+          type: string
+          example: image/png
+        size:
+          type: integer
+          example: 5945
+        position:
+          type: integer
+          example: 0
+
+    UploadUrlRequest:
+      type: object
+      description: Параметры запроса URL для загрузки изображения
+      properties:
+        contentType:
+          type: string
+          example: image/jpeg
+
+    UploadUrlResponse:
+      type: object
+      description: Ответ с URL для загрузки изображения
+      properties:
+        imageId:
+          type: string
+          example: image-1
+        objectKey:
+          type: string
+          example: banner-1/image-1
+        uploadUrl:
+          type: string
+          format: uri
+          example: http://localhost:8080/api/s3/banner/banner-1/image-1
