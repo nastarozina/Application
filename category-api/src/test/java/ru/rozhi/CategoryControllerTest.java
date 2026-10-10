@@ -62,8 +62,8 @@ public class CategoryControllerTest {
     void shouldReturnAllCategories() {
         categoryRepository.save(Category.builder().id("category1").name("NAME1").build());
         categoryRepository.save(Category.builder().id("category2").name("NAME2").build());
-        List<CategoryResponse> expected = List.of(new CategoryResponse("category1", "NAME1"),
-                new CategoryResponse("category2","NAME2"));
+        List<CategoryResponse> expected = List.of(new CategoryResponse("category1", "NAME1", null),
+                new CategoryResponse("category2","NAME2", null));
 
         MvcResult result = mockMvc.perform(get("/"))
                 .andExpect(status().isOk())
@@ -80,7 +80,7 @@ public class CategoryControllerTest {
     void shouldReturnCategoryById() {
         categoryRepository.save(Category.builder().id("category1").name("NAME1").build());
         categoryRepository.save(Category.builder().id("category2").name("NAME2").build());
-        CategoryResponse expected = new CategoryResponse("category2","NAME2");
+        CategoryResponse expected = new CategoryResponse("category2","NAME2", null);
 
         MvcResult result = mockMvc.perform(get("/category2"))
                 .andExpect(status().isOk())
@@ -119,7 +119,7 @@ public class CategoryControllerTest {
     @Test
     @SneakyThrows
     void shouldCreateCategoryAndReturnItById() {
-        CategoryRequest categoryRequest = new CategoryRequest("NAME2");
+        CategoryRequest categoryRequest = new CategoryRequest("NAME2", null);
         MvcResult resultOfPostRequest =
                 mockMvc.perform(
                                 post("/")
@@ -156,11 +156,11 @@ public class CategoryControllerTest {
     void shouldUpdateCategoryAndReturnIt() {
         categoryRepository.save(Category.builder().id("category1").name("NAME1").build());
 
-        CategoryRequest updateCategoryRequest1 = new CategoryRequest("  ");
-        CategoryResponse expected1 = new CategoryResponse("category1", "NAME1");
+        CategoryRequest updateCategoryRequest1 = new CategoryRequest("  ", null);
+        CategoryResponse expected1 = new CategoryResponse("category1", "NAME1", null);
 
-        CategoryRequest updateCategoryRequest2 = new CategoryRequest("NAME2");
-        CategoryResponse expected2 = new CategoryResponse("category1", "NAME2");
+        CategoryRequest updateCategoryRequest2 = new CategoryRequest("NAME2", null);
+        CategoryResponse expected2 = new CategoryResponse("category1", "NAME2", null);
 
         MvcResult result1 = mockMvc.perform(
                         put("/category1")
@@ -190,7 +190,7 @@ public class CategoryControllerTest {
     @Test
     @SneakyThrows
     void shouldReturn404WhenCategoryToUpdateNotFound() {
-        CategoryRequest updateCategoryRequest = new CategoryRequest("NAME1");
+        CategoryRequest updateCategoryRequest = new CategoryRequest("NAME1", null);
 
         mockMvc.perform(
                         put("/category1")

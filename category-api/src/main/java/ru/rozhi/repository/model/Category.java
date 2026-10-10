@@ -16,4 +16,6 @@ public class Category {
 
     @Indexed(unique = true)
     private String name;
+
+    private String parentId;
 }
