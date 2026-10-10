@@ -16,6 +16,8 @@ spring:
     gateway:
       server:
         webmvc:
+          remove-content-length-request-headers-filter:
+            enabled: false
           routes:
             - id: keycloak-gateway
               uri: http://keycloak
@@ -25,11 +27,12 @@ spring:
                 - StripPrefix=2
 
             - id: minio-gateway
-              uri: http://minio
+              uri: http://minio:9000
               predicates:
                 - Path=/api/s3/**
               filters:
                 - StripPrefix=2
+                - RemoveResponseHeader=Access-Control-Allow-Origin
 
             #            - id: user-gateway
             #              uri: http://user-api

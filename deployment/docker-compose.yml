@@ -170,6 +170,7 @@ services:
       S3_ACCESS_KEY: test
       S3_SECRET_KEY: password
       S3_BUCKET: banner
+      S3_PRESIGNED_URL_HOST: http://localhost:8080/api/s3
       CATEGORY_API_URL: http://category-api
       SERVER_PORT: 80
 
