@@ -135,6 +135,22 @@ services:
       - gateway-network
       - minio-network
 
+  minio-init:
+    image: amazon/aws-cli:latest
+    depends_on:
+      - minio
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: password
+      AWS_DEFAULT_REGION: us-east-1
+    volumes:
+      - ./minio/init.sh:/init.sh:ro
+      - ./minio/policy.json:/aws/policy.json:ro
+    entrypoint: ["/bin/bash", "/init.sh"]
+    restart: "no"
+    networks:
+      - minio-network
+
 
   # ============================================================
   # MongoDB
@@ -170,6 +186,7 @@ services:
       S3_ACCESS_KEY: test
       S3_SECRET_KEY: password
       S3_BUCKET: banner
+      S3_PRESIGNED_URL_HOST: http://localhost:8080/api/s3
       CATEGORY_API_URL: http://category-api
       SERVER_PORT: 80
 

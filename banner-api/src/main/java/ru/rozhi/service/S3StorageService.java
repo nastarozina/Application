@@ -2,6 +2,7 @@ package ru.rozhi.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.rozhi.configuration.StorageProperties;
 import ru.rozhi.exception.NoImageUploadedException;
 import ru.rozhi.service.dto.UploadedImageInfo;
@@ -39,8 +40,16 @@ public class S3StorageService implements ImageStorageService {
                     .putObjectRequest(objectRequest)
                     .build();
 
-            return presigner.presignPutObject(presignRequest).url().toString();
-
+            if (storageProperties.getPresignedUrlHost() != null) {
+                return UriComponentsBuilder
+                        .fromUri(storageProperties.getPresignedUrlHost())
+                        .path(presigner.presignPutObject(presignRequest).url().getPath())
+                        .replaceQuery(presigner.presignPutObject(presignRequest).url().getQuery())
+                        .build(true)
+                        .toUriString();
+            } else  {
+                return presigner.presignPutObject(presignRequest).url().toString();
+            }
         } catch (Exception e) {
             throw new RuntimeException("Cannot create S3 presigned URL", e);
         }

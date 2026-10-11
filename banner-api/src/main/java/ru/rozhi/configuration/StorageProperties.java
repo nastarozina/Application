@@ -3,6 +3,7 @@ package ru.rozhi.configuration;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.net.URI;
 import java.time.Duration;
 
 @Data
@@ -12,4 +13,6 @@ public class StorageProperties {
     private String bucket;
 
     private Duration presignedUrlExpiry = Duration.ofMinutes(5);
+
+    private URI presignedUrlHost;
 }
