@@ -25,6 +25,9 @@ spring:
                 - Path=/api/auth/**
               filters:
                 - StripPrefix=2
+                - RemoveResponseHeader=Access-Control-Allow-Origin
+                - RemoveRequestHeader=Content-Length
+                - RewriteResponseHeader=Referrer-Policy, no-referrer, strict-origin-when-cross-origin
 
             - id: minio-gateway
               uri: http://minio:9000
