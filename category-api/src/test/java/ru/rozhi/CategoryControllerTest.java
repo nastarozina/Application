@@ -7,7 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.testcontainers.junit.jupiter.Container;
@@ -24,7 +27,12 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.Mockito.verify;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -46,15 +54,22 @@ public class CategoryControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
+    @MockitoSpyBean
     private CategoryRepository categoryRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private CacheManager cacheManager;
+
     @BeforeEach
     void setUp() {
         categoryRepository.deleteAll();
+        Cache cache = cacheManager.getCache("categoryChains");
+        if (cache != null) {
+            cache.clear();
+        }
     }
 
     @Test
@@ -104,13 +119,14 @@ public class CategoryControllerTest {
     void shouldReturnCategoriesNamesByIds() {
         categoryRepository.save(Category.builder().id("1").name("NAME1").build());
         categoryRepository.save(Category.builder().id("2").name("NAME2").build());
-        Map<String, String> expected = Map.of( "1", "NAME1", "2", "NAME2");
+        Map<String, CategoryResponse> expected = Map.of( "1", new CategoryResponse("1","NAME1", null)
+                , "2", new CategoryResponse("2","NAME2", null));
 
-        MvcResult result = mockMvc.perform(get("/names?categoriesId=1&categoriesId=2"))
+        MvcResult result = mockMvc.perform(get("/names").param("categoriesId", "1", "2"))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        Map<String, String> response =
+        Map<String, CategoryResponse> response =
                 objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
 
         assertThat(response).isEqualTo(expected);
@@ -221,5 +237,101 @@ public class CategoryControllerTest {
 
         mockMvc.perform(delete("/category2"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldReturnCategoryChain() {
+        categoryRepository.save(Category.builder().id("root").name("ROOT").build());
+        categoryRepository.save(Category.builder().id("child1").name("CHILD1").parentId("root").build());
+        categoryRepository.save(Category.builder().id("child2").name("CHILD2").parentId("child1").build());
+
+        List<CategoryResponse> expected = List.of(
+                new CategoryResponse("root", "ROOT", null),
+                new CategoryResponse("child1", "CHILD1", "root"),
+                new CategoryResponse("child2", "CHILD2", "child1")
+        );
+
+        MvcResult result = mockMvc.perform(get("/categories/child2"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<CategoryResponse> response =
+                objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
+
+        assertThat(response).isEqualTo(expected);
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldCacheCategoryChain() {
+        categoryRepository.save(Category.builder().id("root").name("ROOT").build());
+        categoryRepository.save(Category.builder().id("child1").name("CHILD1").parentId("root").build());
+        categoryRepository.save(Category.builder().id("child2").name("CHILD2").parentId("child1").build());
+
+        Cache cache = cacheManager.getCache("categoryChains");
+        assertThat(cache).isNotNull();
+        assertThat(cache.get("child2")).isNull();
+
+        MvcResult result1 = mockMvc.perform(get("/categories/child2"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        Cache.ValueWrapper cachedValue = cache.get("child2");
+        assertThat(cachedValue).isNotNull();
+        verify(categoryRepository, atLeastOnce()).findById(anyString());
+        clearInvocations(categoryRepository);
+
+        List<CategoryResponse> cachedResponse = (List<CategoryResponse>) cachedValue.get();
+        assertThat(cachedResponse).hasSize(3);
+        assertThat(cachedResponse.get(0).id()).isEqualTo("root");
+        assertThat(cachedResponse.get(2).id()).isEqualTo("child2");
+
+        MvcResult result2 = mockMvc.perform(get("/categories/child2"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<CategoryResponse> response2 =
+                objectMapper.readValue(result2.getResponse().getContentAsString(), new TypeReference<>() {});
+
+        verifyNoInteractions(categoryRepository);
+        assertThat(response2).isEqualTo(cachedResponse);
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldEvictCacheOnUpdate() {
+        categoryRepository.save(Category.builder().id("category1").name("NAME1").build());
+
+        mockMvc.perform(get("/categories/category1"))
+                .andExpect(status().isOk());
+
+        Cache cache = cacheManager.getCache("categoryChains");
+        assertThat(cache.get("category1")).isNotNull();
+
+        CategoryRequest updateRequest = new CategoryRequest("NAME2", null);
+        mockMvc.perform(put("/category1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk());
+
+        assertThat(cache.get("category1")).isNull();
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldEvictCacheOnDelete() {
+        categoryRepository.save(Category.builder().id("category1").name("NAME1").build());
+
+        mockMvc.perform(get("/categories/category1"))
+                .andExpect(status().isOk());
+
+        Cache cache = cacheManager.getCache("categoryChains");
+        assertThat(cache.get("category1")).isNotNull();
+
+        mockMvc.perform(delete("/category1"))
+                .andExpect(status().isOk());
+
+        assertThat(cache.get("category1")).isNull();
     }
 }

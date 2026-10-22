@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import ru.rozhi.controller.dto.BannerRequest;
+import ru.rozhi.controller.dto.CategoryResponse;
 import tools.jackson.core.type.TypeReference;
 import ru.rozhi.controller.dto.BannerResponse;
 import ru.rozhi.repository.model.Banner;
@@ -35,8 +36,10 @@ public class BannerControllerTest extends BaseControllerTest {
         bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").categoryId("1").build());
         bannerRepository.save(Banner.builder().id("banner2").name("NAME2").description("DESCRIPTION2").categoryId("2").build());
         List<BannerResponse> expected = List.of(
-                new BannerResponse("banner1", "NAME1", "DESCRIPTION1", "Electronics", List.of()),
-                new BannerResponse("banner2","NAME2", "DESCRIPTION2", "Cars", List.of())
+                new BannerResponse("banner1", "NAME1", "DESCRIPTION1",
+                        List.of(new CategoryResponse("1", "Electronics", null)), List.of()),
+                new BannerResponse("banner2","NAME2", "DESCRIPTION2",
+                        List.of(new CategoryResponse("2", "Cars", null)), List.of())
         );
 
         stubFor(WireMock.get(urlPathEqualTo("/names"))
@@ -68,7 +71,7 @@ public class BannerControllerTest extends BaseControllerTest {
         bannerRepository.save(Banner.builder().id("banner2").name("NAME2").description("DESCRIPTION2").categoryId("2")
                 .build());
         BannerResponse expected = new BannerResponse("banner2","NAME2", "DESCRIPTION2",
-                "Electronics", List.of());
+                List.of(new CategoryResponse("2", "Electronics", null)), List.of());
 
         stubCategoryGetById("2", "response-1", HttpStatus.OK);
 
@@ -104,7 +107,9 @@ public class BannerControllerTest extends BaseControllerTest {
         assertThat(responseOfPostRequest.id()).isNotNull();
         assertThat(responseOfPostRequest.name()).isEqualTo(bannerRequest.name());
         assertThat(responseOfPostRequest.description()).isEqualTo(bannerRequest.description());
-        assertThat(responseOfPostRequest.categoryName()).isEqualTo("Electronics");
+        assertThat(responseOfPostRequest.categories()).isEqualTo(
+                List.of(new CategoryResponse("2", "Electronics", null))
+        );
 
         Banner banner = bannerRepository.findById(responseOfPostRequest.id()).orElse(null);
         assertThat(banner).isNotNull();
@@ -119,7 +124,9 @@ public class BannerControllerTest extends BaseControllerTest {
         assertThat(responseOfGetRequest.id()).isNotNull();
         assertThat(responseOfGetRequest.name()).isEqualTo(bannerRequest.name());
         assertThat(responseOfGetRequest.description()).isEqualTo(bannerRequest.description());
-        assertThat(responseOfPostRequest.categoryName()).isEqualTo("Electronics");
+        assertThat(responseOfPostRequest.categories()).isEqualTo(
+                List.of(new CategoryResponse("2", "Electronics", null))
+        );
     }
 
     @Test
@@ -152,11 +159,11 @@ public class BannerControllerTest extends BaseControllerTest {
 
         BannerRequest updateBannerRequest1 = new BannerRequest("  ", "DESCRIPTION2", "2");
         BannerResponse expected1 = new BannerResponse(bannerId, "NAME1", "DESCRIPTION2",
-                "Electronics", List.of());
+                List.of(new CategoryResponse("2", "Electronics", null)), List.of());
 
         BannerRequest updateBannerRequest2 = new BannerRequest("NAME2", null, "2");
         BannerResponse expected2 = new BannerResponse(bannerId, "NAME2", "DESCRIPTION2",
-                "Electronics", List.of());
+                List.of(new CategoryResponse("2", "Electronics", null)), List.of());
 
         BannerRequest updateBannerRequest3 = new BannerRequest("NAME3", "DESCRIPTION2", "1");
         Banner expected3 = Banner.builder().id(bannerId).name("NAME2").description("DESCRIPTION2").categoryId("2")

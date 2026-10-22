@@ -6,6 +6,6 @@ public record BannerResponse(
         String id,
         String name,
         String description,
-        String categoryName,
+        List<CategoryResponse> categories,
         List<ImageDto> images
 ) {}

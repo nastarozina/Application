@@ -1,6 +1,8 @@
 package ru.rozhi.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import ru.rozhi.controller.dto.CategoryRequest;
 import ru.rozhi.controller.dto.CategoryResponse;
@@ -9,6 +11,8 @@ import ru.rozhi.repository.CategoryRepository;
 import ru.rozhi.repository.model.Category;
 import ru.rozhi.utils.MapperUtils;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,12 +35,12 @@ public class CategoryService {
         return categories.stream().map(MapperUtils::getCategoryResponse).collect(Collectors.toList());
     }
 
-    public Map<String, String> getCategoriesNames(List<String> categoryIds) {
+    public Map<String, CategoryResponse> getCategoriesNames(List<String> categoryIds) {
         return repository.findAllById(categoryIds)
                 .stream()
                 .collect(Collectors.toMap(
                         Category::getId,
-                        Category::getName
+                        MapperUtils::getCategoryResponse
                 ));
     }
 
@@ -48,6 +52,7 @@ public class CategoryService {
         return MapperUtils.getCategoryResponse(createdCategory);
     }
 
+    @CacheEvict(value = "categoryChains", allEntries = true)
     public CategoryResponse updateCategory(String id, CategoryRequest categoryToUpdate) {
         Category category = repository.findById(id)
                 .orElseThrow(() -> new CategoryNotFoundException(id));
@@ -60,6 +65,7 @@ public class CategoryService {
         return MapperUtils.getCategoryResponse(category);
     }
 
+    @CacheEvict(value = "categoryChains", allEntries = true)
     public void deleteCategory(String id) {
         boolean isCategoryExist = repository.existsById(id);
         if (!isCategoryExist) {
@@ -67,5 +73,24 @@ public class CategoryService {
         }
 
         repository.deleteById(id);
+    }
+
+    @Cacheable(value = "categoryChains")
+    public List<CategoryResponse> getCategoryChain(String startCategoryId) {
+        List<CategoryResponse> categoryChain = new ArrayList<>();
+
+        CategoryResponse current = getCategoryById(startCategoryId);
+
+        while (current != null) {
+            categoryChain.add(current);
+
+            if (current.parentId() == null) {
+                break;
+            }
+            current = getCategoryById(current.parentId());
+        }
+
+        Collections.reverse(categoryChain);
+        return categoryChain;
     }
 }

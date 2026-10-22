@@ -10,7 +10,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 public class StubUtils {
 
     public static void stubCategoryGetById(String id, String fileName, HttpStatus status) {
-        stubFor(get(urlEqualTo("/" + id))
+        stubFor(get(urlEqualTo("/categories/" + id))
                 .willReturn(
                         aResponse()
                                 .withStatus(status.value())

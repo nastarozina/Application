@@ -26,14 +26,14 @@ public class BannerService {
     public BannerResponse getBannerById(String id) {
         Banner banner = repository.findById(id)
                 .orElseThrow(() -> new BannerNotFoundException(id));
-        CategoryResponse category = categoryClient.getCategory(banner.getCategoryId());
-        return MapperUtils.getBannerResponse(banner, category.name());
+        List<CategoryResponse> categories = categoryClient.getCategoryChain(banner.getCategoryId());
+        return MapperUtils.getBannerResponse(banner, categories);
     }
 
     public List<BannerResponse> getAllBanners() {
         List<Banner> banners = repository.findAll();
 
-        Map<String, String> categoriesNames = categoryClient
+        Map<String, CategoryResponse> categoriesNames = categoryClient
                 .getCategoriesNames(
                         banners.stream()
                                 .map(Banner::getCategoryId)
@@ -43,19 +43,19 @@ public class BannerService {
         return banners.stream()
                 .map(banner -> MapperUtils.getBannerResponse(
                         banner,
-                        categoriesNames.get(banner.getCategoryId())
+                        List.of(categoriesNames.get(banner.getCategoryId()))
                 ))
                 .toList();
     }
 
     public BannerResponse createBanner(BannerRequest banner) {
-        CategoryResponse category = categoryClient.getCategory(banner.categoryId());
+        List<CategoryResponse> categories = categoryClient.getCategoryChain(banner.categoryId());
         Banner createdBanner = repository.save(Banner.builder()
                 .name(banner.name())
                 .description(banner.description())
                 .categoryId(banner.categoryId())
                 .build());
-        return MapperUtils.getBannerResponse(createdBanner, category.name());
+        return MapperUtils.getBannerResponse(createdBanner, categories);
     }
 
     public BannerResponse updateBanner(String id, BannerRequest bannerToUpdate) {
@@ -74,11 +74,11 @@ public class BannerService {
             banner.setCategoryId(bannerToUpdate.categoryId());
         }
 
-        CategoryResponse category = categoryClient.getCategory(banner.getCategoryId());
+        List<CategoryResponse> categories = categoryClient.getCategoryChain(banner.getCategoryId());
 
         banner = repository.save(banner);
 
-        return MapperUtils.getBannerResponse(banner, category.name());
+        return MapperUtils.getBannerResponse(banner, categories);
     }
 
     public void deleteBanner(String id) {
