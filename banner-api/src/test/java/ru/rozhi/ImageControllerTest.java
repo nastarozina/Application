@@ -94,7 +94,9 @@ public class ImageControllerTest extends BaseControllerTest {
     @SneakyThrows
     public void checkImageUploadProcess() {
         BannerRequest bannerRequest = new BannerRequest("NAME1", "DESCRIPTION1", "1");
-        when(categoryClient.getCategory("1")).thenReturn(new CategoryResponse("1", "Electronics"));
+        when(categoryClient.getCategoryChain("1")).thenReturn(
+                List.of(new CategoryResponse("1", "Electronics", null))
+        );
         MvcResult createResult = mockMvc.perform(
                         post("/")
                                 .contentType(MediaType.APPLICATION_JSON)

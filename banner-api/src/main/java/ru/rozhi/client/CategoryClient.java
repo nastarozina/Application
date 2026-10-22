@@ -11,11 +11,11 @@ import java.util.Map;
 
 @HttpExchange("${clients.category-api:category-api}")
 public interface CategoryClient {
-    @GetExchange("/{id}")
-    CategoryResponse getCategory(@PathVariable String id);
+    @GetExchange("/categories/{id}")
+    List<CategoryResponse> getCategoryChain(@PathVariable String id);
 
     @GetExchange("/names")
-    Map<String, String> getCategoriesNames(
+    Map<String, CategoryResponse> getCategoriesNames(
             @RequestParam("categoriesId") List<String> categoriesId
     );
 }

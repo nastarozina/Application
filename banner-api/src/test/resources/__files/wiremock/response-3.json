@@ -1,4 +1,12 @@
 {
-  "1": "Electronics",
-  "2": "Cars"
+  "1": {
+    "id": "1",
+    "name": "Electronics",
+    "parentId": null
+  },
+  "2": {
+    "id": "2",
+    "name": "Cars",
+    "parentId": null
+  }
 }

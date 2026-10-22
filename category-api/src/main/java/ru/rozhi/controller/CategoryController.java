@@ -39,7 +39,7 @@ public class CategoryController {
     }
 
     @GetMapping("/names")
-    public Map<String, String> getCategoriesNames(@RequestParam List<String> categoriesId) {
+    public Map<String, CategoryResponse> getCategoriesNames(@RequestParam List<String> categoriesId) {
         return categoryService.getCategoriesNames(categoriesId);
     }
 
@@ -63,5 +63,10 @@ public class CategoryController {
     @DeleteMapping(CATEGORY_PATH)
     public void deleteCategory(@PathVariable String id) {
         categoryService.deleteCategory(id);
+    }
+
+    @GetMapping("/categories" + CATEGORY_PATH)
+    public List<CategoryResponse> getCategoryChain(@PathVariable String id) {
+        return categoryService.getCategoryChain(id);
     }
 }

@@ -1,4 +1,7 @@
-{
-  "id": "2",
-  "name": "Electronics"
-}
+[
+  {
+    "id": "2",
+    "name": "Electronics",
+    "parentId": null
+  }
+]
