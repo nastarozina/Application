@@ -24,4 +24,6 @@ public class Banner{
 
     @Builder.Default
     private List<Image> images = new ArrayList<>();
+
+    private String ownerId;
 }

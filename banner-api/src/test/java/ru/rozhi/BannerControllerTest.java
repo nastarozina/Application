@@ -33,13 +33,15 @@ public class BannerControllerTest extends BaseControllerTest {
     @Test
     @SneakyThrows
     void shouldReturnAllBanners() {
-        bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").categoryId("1").build());
-        bannerRepository.save(Banner.builder().id("banner2").name("NAME2").description("DESCRIPTION2").categoryId("2").build());
+        bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").categoryId("1")
+                .ownerId("owner1").build());
+        bannerRepository.save(Banner.builder().id("banner2").name("NAME2").description("DESCRIPTION2").categoryId("2")
+                .ownerId("owner2").build());
         List<BannerResponse> expected = List.of(
                 new BannerResponse("banner1", "NAME1", "DESCRIPTION1",
-                        List.of(new CategoryResponse("1", "Electronics", null)), List.of()),
+                        List.of(new CategoryResponse("1", "Electronics", null)), List.of(), "owner1"),
                 new BannerResponse("banner2","NAME2", "DESCRIPTION2",
-                        List.of(new CategoryResponse("2", "Cars", null)), List.of())
+                        List.of(new CategoryResponse("2", "Cars", null)), List.of(), "owner2")
         );
 
         stubFor(WireMock.get(urlPathEqualTo("/names"))
@@ -66,12 +68,12 @@ public class BannerControllerTest extends BaseControllerTest {
     @SneakyThrows
     void shouldReturnBannerById() {
         bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").categoryId("1")
-                .build());
+                .ownerId("owner1").build());
 
         bannerRepository.save(Banner.builder().id("banner2").name("NAME2").description("DESCRIPTION2").categoryId("2")
-                .build());
+                .ownerId("owner2").build());
         BannerResponse expected = new BannerResponse("banner2","NAME2", "DESCRIPTION2",
-                List.of(new CategoryResponse("2", "Electronics", null)), List.of());
+                List.of(new CategoryResponse("2", "Electronics", null)), List.of(), "owner2");
 
         stubCategoryGetById("2", "response-1", HttpStatus.OK);
 
@@ -97,7 +99,7 @@ public class BannerControllerTest extends BaseControllerTest {
         BannerRequest bannerRequest = new BannerRequest("NAME2", "DESCRIPTION2", "2");
         stubCategoryGetById("2", "response-1", HttpStatus.OK);
 
-        MvcResult resultOfPostRequest = createBanner(bannerRequest)
+        MvcResult resultOfPostRequest = createBanner(bannerRequest, "owner1")
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
                 .andReturn();
@@ -110,6 +112,7 @@ public class BannerControllerTest extends BaseControllerTest {
         assertThat(responseOfPostRequest.categories()).isEqualTo(
                 List.of(new CategoryResponse("2", "Electronics", null))
         );
+        assertThat(responseOfPostRequest.ownerId()).isEqualTo("owner1");
 
         Banner banner = bannerRepository.findById(responseOfPostRequest.id()).orElse(null);
         assertThat(banner).isNotNull();
@@ -127,6 +130,7 @@ public class BannerControllerTest extends BaseControllerTest {
         assertThat(responseOfPostRequest.categories()).isEqualTo(
                 List.of(new CategoryResponse("2", "Electronics", null))
         );
+        assertThat(responseOfPostRequest.ownerId()).isEqualTo("owner1");
     }
 
     @Test
@@ -136,7 +140,7 @@ public class BannerControllerTest extends BaseControllerTest {
 
         stubCategoryGetById("1", "response-2", HttpStatus.NOT_FOUND);
 
-        MvcResult result = createBanner(bannerRequest)
+        MvcResult result = createBanner(bannerRequest, "")
                 .andExpect(status().isInternalServerError())
                 .andExpect(header().doesNotExist("Location"))
                 .andReturn();
@@ -154,25 +158,25 @@ public class BannerControllerTest extends BaseControllerTest {
     @SneakyThrows
     void shouldUpdateBannerAndReturnIt() {
         String bannerId = "banner1";
-        bannerRepository.save(Banner.builder().id(bannerId).name("NAME1").description("DESCRIPTION1")
+        bannerRepository.save(Banner.builder().id(bannerId).name("NAME1").description("DESCRIPTION1").ownerId("owner1")
                 .build());
 
         BannerRequest updateBannerRequest1 = new BannerRequest("  ", "DESCRIPTION2", "2");
         BannerResponse expected1 = new BannerResponse(bannerId, "NAME1", "DESCRIPTION2",
-                List.of(new CategoryResponse("2", "Electronics", null)), List.of());
+                List.of(new CategoryResponse("2", "Electronics", null)), List.of(), "owner1");
 
         BannerRequest updateBannerRequest2 = new BannerRequest("NAME2", null, "2");
         BannerResponse expected2 = new BannerResponse(bannerId, "NAME2", "DESCRIPTION2",
-                List.of(new CategoryResponse("2", "Electronics", null)), List.of());
+                List.of(new CategoryResponse("2", "Electronics", null)), List.of(), "owner1");
 
         BannerRequest updateBannerRequest3 = new BannerRequest("NAME3", "DESCRIPTION2", "1");
         Banner expected3 = Banner.builder().id(bannerId).name("NAME2").description("DESCRIPTION2").categoryId("2")
-                .build();
+                .ownerId("owner1").build();
 
         stubCategoryGetById("1", "response-2", HttpStatus.NOT_FOUND);
         stubCategoryGetById("2", "response-1", HttpStatus.OK);
 
-        MvcResult result1 = updateBanner(bannerId, updateBannerRequest1)
+        MvcResult result1 = updateBanner(bannerId, updateBannerRequest1, "owner1")
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -180,7 +184,7 @@ public class BannerControllerTest extends BaseControllerTest {
 
         assertThat(response1).isEqualTo(expected1);
 
-        MvcResult result2 = updateBanner(bannerId, updateBannerRequest2)
+        MvcResult result2 = updateBanner(bannerId, updateBannerRequest2, "owner1")
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -188,7 +192,7 @@ public class BannerControllerTest extends BaseControllerTest {
 
         assertThat(response2).isEqualTo(expected2);
 
-        updateBanner(bannerId, updateBannerRequest3)
+        updateBanner(bannerId, updateBannerRequest3, "owner1")
                 .andExpect(status().isInternalServerError());
 
         Banner result3 = bannerRepository.findById(bannerId).orElse(null);
@@ -200,16 +204,33 @@ public class BannerControllerTest extends BaseControllerTest {
     void shouldReturn404WhenBannerToUpdateNotFound() {
         BannerRequest updateBannerRequest = new BannerRequest("NAME1", "DESCRIPTION1", "");
 
-        updateBanner("banner1", updateBannerRequest)
+        updateBanner("banner1", updateBannerRequest, "")
                 .andExpect(status().isNotFound());
     }
 
     @Test
     @SneakyThrows
-    void shouldDeleteBannerById() {
-        bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").build());
+    void shouldReturn403WhenBannerToUpdateForbidden() {
+        Banner banner = bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1")
+                .ownerId("owner1").build());
 
-        deleteBanner("banner1")
+        BannerRequest updateBannerRequest = new BannerRequest("NAME1", "DESCRIPTION2", "");
+
+        updateBanner("banner1", updateBannerRequest, "owner2")
+                .andExpect(status().isForbidden());
+
+        Banner actual = bannerRepository.findById("banner1").orElse(null);
+
+        assertThat(banner).isEqualTo(actual);
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldDeleteBannerById() {
+        bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").ownerId("owner1")
+                .build());
+
+        deleteBanner("banner1", "owner1")
                 .andExpect(status().isOk());
 
         Banner banner = bannerRepository.findById("banner1").orElse(null);
@@ -223,30 +244,47 @@ public class BannerControllerTest extends BaseControllerTest {
     void shouldReturn404WhenBannerToDeleteNotFound() {
         bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").build());
 
-        deleteBanner("banner2")
+        deleteBanner("banner2", "")
                 .andExpect(status().isNotFound());
     }
 
+    @Test
     @SneakyThrows
-    private ResultActions createBanner(BannerRequest request) {
+    void shouldReturn403WhenBannerToDeleteForbidden() {
+        bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").ownerId("owner1")
+                .categoryId("2").build());
+
+        deleteBanner("banner1", "owner2")
+                .andExpect(status().isForbidden());
+
+        Banner banner = bannerRepository.findById("banner1").orElse(null);
+        assertThat(banner).isNotNull();
+
+        stubCategoryGetById("2", "response-1", HttpStatus.OK);
+
+        mockMvc.perform(get("/banner1")).andExpect(status().isOk());
+    }
+
+    @SneakyThrows
+    private ResultActions createBanner(BannerRequest request, String userId) {
         return mockMvc.perform(
-                post("/")
+                post("/").header("X-User-Id", userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
         );
     }
 
     @SneakyThrows
-    private ResultActions updateBanner(String bannerId, BannerRequest request) {
+    private ResultActions updateBanner(String bannerId, BannerRequest request, String userId) {
         return mockMvc.perform(
-                put("/{bannerId}", bannerId)
+                put("/{bannerId}", bannerId).header("X-User-Id", userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
         );
     }
 
     @SneakyThrows
-    private ResultActions deleteBanner(String bannerId) {
-        return mockMvc.perform(delete("/{bannerId}", bannerId));
+    private ResultActions deleteBanner(String bannerId , String userId) {
+        return mockMvc.perform(delete("/{bannerId}", bannerId).header("X-User-Id", userId));
     }
 }

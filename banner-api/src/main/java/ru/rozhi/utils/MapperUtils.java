@@ -15,7 +15,8 @@ public class MapperUtils {
                 banner.getName(),
                 banner.getDescription(),
                 categories,
-                banner.getImages().stream().map(MapperUtils::getImageDto).toList()
+                banner.getImages().stream().map(MapperUtils::getImageDto).toList(),
+                banner.getOwnerId()
         );
     }
 

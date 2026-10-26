@@ -51,7 +51,7 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
 
-    implementation 'com.github.nastarozina:error-handling-starter:1.0.4'
+    implementation 'com.github.nastarozina:error-handling-starter:1.0.5'
 }
 
 tasks.named('test') {
