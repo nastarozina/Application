@@ -35,7 +35,8 @@ services:
     image: keycloak/keycloak:26.7
     container_name: keycloak
     restart: unless-stopped
-
+    expose:
+      - "9000"
     command:
       - start-dev
       - --import-realm
@@ -62,9 +63,6 @@ services:
       KC_HEALTH_ENABLED: true
       KC_METRICS_ENABLED: true
 
-    ports:
-      - "9002:9000"
-
     volumes:
       - ./keycloak/realm:/opt/keycloak/data/import:ro
 
@@ -76,7 +74,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "exec 3<>/dev/tcp/localhost/8080"
+          "exec 3<>/dev/tcp/localhost/80"
         ]
       interval: 10s
       timeout: 5s
@@ -151,7 +149,6 @@ services:
     restart: "no"
     networks:
       - minio-network
-
 
   # ============================================================
   # MongoDB
