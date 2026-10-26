@@ -4,6 +4,10 @@
 
   "displayName": "NeAvito",
 
+  "defaultRoles": [
+    "user"
+  ],
+
   "registrationAllowed": true,
   "registrationEmailAsUsername": true,
   "loginWithEmailAllowed": true,

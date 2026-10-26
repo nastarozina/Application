@@ -68,22 +68,38 @@ spring:
 # Конфигурация правил авторизации
 security:
   default-access: permit
-#  routes:
-#    # Публичные
-#    - paths: /api/auth/**
-#      access: permit
-#    - paths: /actuator/health
-#      access: permit
-#    - paths: /actuator/info
-#      access: permit
-#
-#    - paths: /api/admin/**
-#      access: "role:ADMIN"
-#
-#    # Публичный GET для объявлений
-#    - paths: /api/banner/**
-#      access: permit
-#      methods: GET
+  routes:
+    - paths:
+        - "/api/banner/**"
+        - "/api/category/**"
+      methods:
+        - GET
+      access: permit
+
+    - paths:
+        - "/api/banner/**"
+      methods:
+        - POST
+      access: authenticated
+
+    - paths:
+        - "/api/banner/*"
+      methods:
+        - PUT
+        - DELETE
+      access: authenticated
+
+    - paths:
+        - "/api/banner/admin/**"
+      access: "role:ADMIN"
+
+    - paths:
+        - "/api/category/**"
+      methods:
+        - POST
+        - PUT
+        - DELETE
+      access: "role:ADMIN"
 
 management:
   endpoints:
