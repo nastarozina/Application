@@ -98,7 +98,7 @@ public class ImageControllerTest extends BaseControllerTest {
                 List.of(new CategoryResponse("1", "Electronics", null))
         );
         MvcResult createResult = mockMvc.perform(
-                        post("/")
+                        post("/").header("X-User-Id", "")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(bannerRequest))
                 )

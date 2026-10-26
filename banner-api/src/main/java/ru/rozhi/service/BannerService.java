@@ -6,6 +6,7 @@ import ru.rozhi.client.CategoryClient;
 import ru.rozhi.controller.dto.BannerRequest;
 import ru.rozhi.controller.dto.BannerResponse;
 import ru.rozhi.controller.dto.CategoryResponse;
+import ru.rozhi.exception.BannerForbiddenException;
 import ru.rozhi.exception.BannerNotFoundException;
 import ru.rozhi.repository.BannerRepository;
 import ru.rozhi.repository.model.Banner;
@@ -48,14 +49,42 @@ public class BannerService {
                 .toList();
     }
 
-    public BannerResponse createBanner(BannerRequest banner) {
+    public BannerResponse createBanner(BannerRequest banner, String userId) {
         List<CategoryResponse> categories = categoryClient.getCategoryChain(banner.categoryId());
         Banner createdBanner = repository.save(Banner.builder()
                 .name(banner.name())
                 .description(banner.description())
                 .categoryId(banner.categoryId())
+                .ownerId(userId)
                 .build());
         return MapperUtils.getBannerResponse(createdBanner, categories);
+    }
+
+    public BannerResponse updateBanner(String id, BannerRequest bannerToUpdate, String userId) {
+        Banner banner = repository.findById(id)
+                .orElseThrow(() -> new BannerNotFoundException(id));
+
+        if (!banner.getOwnerId().equals(userId)) {
+            throw new BannerForbiddenException(id);
+        }
+
+        if (bannerToUpdate.name() != null && !bannerToUpdate.name().isBlank()) {
+            banner.setName(bannerToUpdate.name());
+        }
+
+        if (bannerToUpdate.description() != null) {
+            banner.setDescription(bannerToUpdate.description());
+        }
+
+        if (bannerToUpdate.categoryId() != null && !bannerToUpdate.categoryId().isBlank()) {
+            banner.setCategoryId(bannerToUpdate.categoryId());
+        }
+
+        List<CategoryResponse> categories = categoryClient.getCategoryChain(banner.getCategoryId());
+
+        banner = repository.save(banner);
+
+        return MapperUtils.getBannerResponse(banner, categories);
     }
 
     public BannerResponse updateBanner(String id, BannerRequest bannerToUpdate) {
@@ -79,6 +108,17 @@ public class BannerService {
         banner = repository.save(banner);
 
         return MapperUtils.getBannerResponse(banner, categories);
+    }
+
+    public void deleteBanner(String id, String userId) {
+        Banner banner = repository.findById(id)
+                .orElseThrow(() -> new BannerNotFoundException(id));
+
+        if (!banner.getOwnerId().equals(userId)) {
+            throw new BannerForbiddenException(id);
+        }
+
+        repository.deleteById(id);
     }
 
     public void deleteBanner(String id) {
