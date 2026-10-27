@@ -3,6 +3,7 @@ package ru.rozhi.repository.model;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
@@ -20,10 +21,12 @@ public class Banner{
 
     private String description;
 
+    @Indexed
     private String categoryId;
 
     @Builder.Default
     private List<Image> images = new ArrayList<>();
 
+    @Indexed
     private String ownerId;
 }

@@ -1,6 +1,5 @@
 package ru.rozhi;
 
-import com.github.tomakehurst.wiremock.client.WireMock;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -15,10 +14,6 @@ import ru.rozhi.repository.model.Banner;
 
 import java.util.List;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.havingExactly;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -26,7 +21,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static ru.rozhi.utils.StubUtils.stubCategoryGetById;
+import static ru.rozhi.utils.StubUtils.stubCategoryGetChain;
+import static ru.rozhi.utils.StubUtils.stubCategoryGetNames;
 
 public class BannerControllerTest extends BaseControllerTest {
 
@@ -44,15 +40,7 @@ public class BannerControllerTest extends BaseControllerTest {
                         List.of(new CategoryResponse("2", "Cars", null)), List.of(), "owner2")
         );
 
-        stubFor(WireMock.get(urlPathEqualTo("/names"))
-                .withQueryParam("categoriesId", havingExactly("1", "2"))
-                .willReturn(
-                        aResponse()
-                                .withStatus(200)
-                                .withHeader("Content-Type", "application/json")
-                                .withBodyFile("wiremock/response-3.json")
-                )
-        );
+        stubCategoryGetNames("response-3", HttpStatus.OK, "1", "2");
 
         MvcResult result = mockMvc.perform(get("/"))
                 .andExpect(status().isOk())
@@ -75,7 +63,7 @@ public class BannerControllerTest extends BaseControllerTest {
         BannerResponse expected = new BannerResponse("banner2","NAME2", "DESCRIPTION2",
                 List.of(new CategoryResponse("2", "Electronics", null)), List.of(), "owner2");
 
-        stubCategoryGetById("2", "response-1", HttpStatus.OK);
+        stubCategoryGetChain("2", "response-1", HttpStatus.OK);
 
         MvcResult result = mockMvc.perform(get("/banner2"))
                 .andExpect(status().isOk())
@@ -97,7 +85,7 @@ public class BannerControllerTest extends BaseControllerTest {
     @SneakyThrows
     void shouldCreateBannerAndReturnItById() {
         BannerRequest bannerRequest = new BannerRequest("NAME2", "DESCRIPTION2", "2");
-        stubCategoryGetById("2", "response-1", HttpStatus.OK);
+        stubCategoryGetChain("2", "response-1", HttpStatus.OK);
 
         MvcResult resultOfPostRequest = createBanner(bannerRequest, "owner1")
                 .andExpect(status().isCreated())
@@ -138,7 +126,7 @@ public class BannerControllerTest extends BaseControllerTest {
     void shouldNotCreateBannerBecauseCategoryNotFound() {
         BannerRequest bannerRequest = new BannerRequest("NAME2", "DESCRIPTION2", "1");
 
-        stubCategoryGetById("1", "response-2", HttpStatus.NOT_FOUND);
+        stubCategoryGetChain("1", "response-2", HttpStatus.NOT_FOUND);
 
         MvcResult result = createBanner(bannerRequest, "")
                 .andExpect(status().isInternalServerError())
@@ -173,8 +161,8 @@ public class BannerControllerTest extends BaseControllerTest {
         Banner expected3 = Banner.builder().id(bannerId).name("NAME2").description("DESCRIPTION2").categoryId("2")
                 .ownerId("owner1").build();
 
-        stubCategoryGetById("1", "response-2", HttpStatus.NOT_FOUND);
-        stubCategoryGetById("2", "response-1", HttpStatus.OK);
+        stubCategoryGetChain("1", "response-2", HttpStatus.NOT_FOUND);
+        stubCategoryGetChain("2", "response-1", HttpStatus.OK);
 
         MvcResult result1 = updateBanner(bannerId, updateBannerRequest1, "owner1")
                 .andExpect(status().isOk())
@@ -260,9 +248,67 @@ public class BannerControllerTest extends BaseControllerTest {
         Banner banner = bannerRepository.findById("banner1").orElse(null);
         assertThat(banner).isNotNull();
 
-        stubCategoryGetById("2", "response-1", HttpStatus.OK);
+        stubCategoryGetChain("2", "response-1", HttpStatus.OK);
 
         mockMvc.perform(get("/banner1")).andExpect(status().isOk());
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldReturnAllBannersByCategory() {
+        bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").categoryId("2")
+                .ownerId("owner1").build());
+        bannerRepository.save(Banner.builder().id("banner2").name("NAME2").description("DESCRIPTION2").categoryId("1")
+                .ownerId("owner2").build());
+        bannerRepository.save(Banner.builder().id("banner3").name("NAME3").description("DESCRIPTION3").categoryId("2")
+                .ownerId("owner2").build());
+
+        List<BannerResponse> expected = List.of(
+                new BannerResponse("banner1", "NAME1", "DESCRIPTION1",
+                        List.of(new CategoryResponse("2", "Electronics", null)), List.of(), "owner1"),
+                new BannerResponse("banner3","NAME3", "DESCRIPTION3",
+                        List.of(new CategoryResponse("2", "Electronics", null)), List.of(), "owner2")
+        );
+
+        stubCategoryGetNames("response-4", HttpStatus.OK,  "2");
+
+        MvcResult result = mockMvc.perform(get("/").queryParam("categoryId", "2"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<BannerResponse> response =
+                objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
+
+        assertThat(response).isEqualTo(expected);
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldReturnAllBannersByOwner() {
+        bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").categoryId("2")
+                .ownerId("owner1").build());
+        bannerRepository.save(Banner.builder().id("banner2").name("NAME2").description("DESCRIPTION2").categoryId("1")
+                .ownerId("owner2").build());
+        bannerRepository.save(Banner.builder().id("banner3").name("NAME3").description("DESCRIPTION3").categoryId("2")
+                .ownerId("owner2").build());
+
+        List<BannerResponse> expected = List.of(
+                new BannerResponse("banner2", "NAME2", "DESCRIPTION2",
+                        List.of(new CategoryResponse("1", "Electronics", null)), List.of(), "owner2"),
+                new BannerResponse("banner3","NAME3", "DESCRIPTION3",
+                        List.of(new CategoryResponse("2", "Cars", null)), List.of(), "owner2")
+        );
+
+        stubCategoryGetNames("response-3", HttpStatus.OK, "1", "2");
+
+        MvcResult result = mockMvc.perform(get("/").queryParam("ownerId", "owner2"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<BannerResponse> response =
+                objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
+
+        assertThat(response).isEqualTo(expected);
     }
 
     @SneakyThrows

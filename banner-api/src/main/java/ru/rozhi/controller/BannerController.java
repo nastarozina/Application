@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ru.rozhi.controller.dto.BannerRequest;
@@ -33,8 +34,11 @@ public class BannerController {
     }
 
     @GetMapping
-    public List<BannerResponse> getAllBanners() {
-        return bannerService.getAllBanners();
+    public List<BannerResponse> getAllBanners(
+            @RequestParam (required = false) String categoryId,
+            @RequestParam (required = false) String ownerId
+    ) {
+        return bannerService.getAllBanners(categoryId, ownerId);
     }
 
     @PostMapping

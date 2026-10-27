@@ -39,8 +39,8 @@ public class CategoryController {
     }
 
     @GetMapping("/names")
-    public Map<String, CategoryResponse> getCategoriesNames(@RequestParam List<String> categoriesId) {
-        return categoryService.getCategoriesNames(categoriesId);
+    public Map<String, CategoryResponse> getCategoryNames(@RequestParam("categoryId") List<String> categoryIds) {
+        return categoryService.getCategoryNames(categoryIds);
     }
 
     @PostMapping

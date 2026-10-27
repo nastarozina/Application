@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mongodb.MongoDBContainer;
@@ -40,9 +41,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-@Testcontainers
 public class CategoryControllerTest {
 
     @Container
@@ -122,7 +123,7 @@ public class CategoryControllerTest {
         Map<String, CategoryResponse> expected = Map.of( "1", new CategoryResponse("1","NAME1", null)
                 , "2", new CategoryResponse("2","NAME2", null));
 
-        MvcResult result = mockMvc.perform(get("/names").param("categoriesId", "1", "2"))
+        MvcResult result = mockMvc.perform(get("/names").param("categoryId", "1", "2"))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -136,15 +137,11 @@ public class CategoryControllerTest {
     @SneakyThrows
     void shouldCreateCategoryAndReturnItById() {
         CategoryRequest categoryRequest = new CategoryRequest("NAME2", null);
-        MvcResult resultOfPostRequest =
-                mockMvc.perform(
-                                post("/")
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .content(objectMapper.writeValueAsString(categoryRequest))
-                        )
-                        .andExpect(status().isCreated())
-                        .andExpect(header().exists("Location"))
-                        .andReturn();
+
+        MvcResult resultOfPostRequest = createCategory(categoryRequest)
+                .andExpect(status().isCreated())
+                .andExpect(header().exists("Location"))
+                .andReturn();
 
         CategoryResponse responseOfPostRequest =
                 objectMapper.readValue(resultOfPostRequest.getResponse().getContentAsString(), CategoryResponse.class);
@@ -178,11 +175,7 @@ public class CategoryControllerTest {
         CategoryRequest updateCategoryRequest2 = new CategoryRequest("NAME2", null);
         CategoryResponse expected2 = new CategoryResponse("category1", "NAME2", null);
 
-        MvcResult result1 = mockMvc.perform(
-                        put("/category1")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(updateCategoryRequest1))
-                )
+        MvcResult result1 = updateCategory("category1", updateCategoryRequest1)
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -190,11 +183,7 @@ public class CategoryControllerTest {
 
         assertThat(response1).isEqualTo(expected1);
 
-        MvcResult result2 = mockMvc.perform(
-                        put("/category1")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(updateCategoryRequest2))
-                )
+        MvcResult result2 = updateCategory("category1", updateCategoryRequest2)
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -208,11 +197,7 @@ public class CategoryControllerTest {
     void shouldReturn404WhenCategoryToUpdateNotFound() {
         CategoryRequest updateCategoryRequest = new CategoryRequest("NAME1", null);
 
-        mockMvc.perform(
-                        put("/category1")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(updateCategoryRequest))
-                )
+        updateCategory("category1", updateCategoryRequest)
                 .andExpect(status().isNotFound());
     }
 
@@ -273,9 +258,8 @@ public class CategoryControllerTest {
         assertThat(cache).isNotNull();
         assertThat(cache.get("child2")).isNull();
 
-        MvcResult result1 = mockMvc.perform(get("/categories/child2"))
-                .andExpect(status().isOk())
-                .andReturn();
+        mockMvc.perform(get("/categories/child2"))
+                .andExpect(status().isOk());
 
         Cache.ValueWrapper cachedValue = cache.get("child2");
         assertThat(cachedValue).isNotNull();
@@ -310,10 +294,8 @@ public class CategoryControllerTest {
         assertThat(cache.get("category1")).isNotNull();
 
         CategoryRequest updateRequest = new CategoryRequest("NAME2", null);
-        mockMvc.perform(put("/category1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updateRequest)))
-                .andExpect(status().isOk());
+
+        updateCategory("category1", updateRequest).andExpect(status().isOk());
 
         assertThat(cache.get("category1")).isNull();
     }
@@ -333,5 +315,23 @@ public class CategoryControllerTest {
                 .andExpect(status().isOk());
 
         assertThat(cache.get("category1")).isNull();
+    }
+
+    @SneakyThrows
+    private ResultActions createCategory(CategoryRequest request) {
+        return mockMvc.perform(
+                post("/")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+        );
+    }
+
+    @SneakyThrows
+    private ResultActions updateCategory(String categoryId, CategoryRequest request) {
+        return mockMvc.perform(
+                put("/{categoryId}", categoryId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+        );
     }
 }

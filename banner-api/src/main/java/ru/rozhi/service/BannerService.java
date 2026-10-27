@@ -1,6 +1,9 @@
 package ru.rozhi.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import ru.rozhi.client.CategoryClient;
 import ru.rozhi.controller.dto.BannerRequest;
@@ -12,6 +15,7 @@ import ru.rozhi.repository.BannerRepository;
 import ru.rozhi.repository.model.Banner;
 import ru.rozhi.utils.MapperUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +28,9 @@ public class BannerService {
     @Autowired
     private CategoryClient categoryClient;
 
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
     public BannerResponse getBannerById(String id) {
         Banner banner = repository.findById(id)
                 .orElseThrow(() -> new BannerNotFoundException(id));
@@ -31,22 +38,39 @@ public class BannerService {
         return MapperUtils.getBannerResponse(banner, categories);
     }
 
-    public List<BannerResponse> getAllBanners() {
-        List<Banner> banners = repository.findAll();
+    public List<BannerResponse> getAllBanners(String categoryId, String ownerId) {
+        List<Criteria> criteriaList = new ArrayList<>();
 
-        Map<String, CategoryResponse> categoriesNames = categoryClient
-                .getCategoriesNames(
+        addAndIfNotNull(criteriaList, "categoryId", categoryId);
+        addAndIfNotNull(criteriaList, "ownerId", ownerId);
+
+        Query query = new Query();
+        if (!criteriaList.isEmpty()) {
+            query.addCriteria(new Criteria().andOperator(criteriaList.toArray(new Criteria[0])));
+        }
+
+        List<Banner> banners = mongoTemplate.find(query, Banner.class);
+
+        Map<String, CategoryResponse> categoryNames = categoryClient
+                .getCategoryNames(
                         banners.stream()
                                 .map(Banner::getCategoryId)
+                                .distinct()
                                 .toList()
                 );
 
         return banners.stream()
                 .map(banner -> MapperUtils.getBannerResponse(
                         banner,
-                        List.of(categoriesNames.get(banner.getCategoryId()))
+                        List.of(categoryNames.get(banner.getCategoryId()))
                 ))
                 .toList();
+    }
+
+    private void addAndIfNotNull(List<Criteria> criteriaList, String fieldName, Object value) {
+        if (value != null) {
+            criteriaList.add(Criteria.where(fieldName).is(value));
+        }
     }
 
     public BannerResponse createBanner(BannerRequest banner, String userId) {
