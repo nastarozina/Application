@@ -15,7 +15,7 @@ public interface CategoryClient {
     List<CategoryResponse> getCategoryChain(@PathVariable String id);
 
     @GetExchange("/names")
-    Map<String, CategoryResponse> getCategoriesNames(
-            @RequestParam("categoriesId") List<String> categoriesId
+    Map<String, CategoryResponse> getCategoryNames(
+            @RequestParam("categoryId") List<String> categoryIds
     );
 }

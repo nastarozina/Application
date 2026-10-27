@@ -35,7 +35,7 @@ public class CategoryService {
         return categories.stream().map(MapperUtils::getCategoryResponse).collect(Collectors.toList());
     }
 
-    public Map<String, CategoryResponse> getCategoriesNames(List<String> categoryIds) {
+    public Map<String, CategoryResponse> getCategoryNames(List<String> categoryIds) {
         return repository.findAllById(categoryIds)
                 .stream()
                 .collect(Collectors.toMap(
