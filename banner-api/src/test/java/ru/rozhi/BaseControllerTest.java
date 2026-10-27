@@ -16,10 +16,10 @@ import org.wiremock.spring.EnableWireMock;
 import ru.rozhi.repository.BannerRepository;
 import tools.jackson.databind.ObjectMapper;
 
+@Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @EnableWireMock
-@Testcontainers
 public abstract class BaseControllerTest {
 
     @Container
