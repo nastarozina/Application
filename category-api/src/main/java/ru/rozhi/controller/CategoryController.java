@@ -43,6 +43,11 @@ public class CategoryController {
         return categoryService.getCategoryNames(categoryIds);
     }
 
+    @GetMapping("/childIds" + CATEGORY_PATH)
+    public List<String> getChildCategoryIds(@PathVariable String id) {
+        return categoryService.getChildCategoryIds(id);
+    }
+
     @PostMapping
     public ResponseEntity<@NonNull CategoryResponse> createCategory(@RequestBody CategoryRequest category) {
         CategoryResponse createdCategory = categoryService.createCategory(category);

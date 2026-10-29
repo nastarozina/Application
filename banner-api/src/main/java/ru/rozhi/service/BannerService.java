@@ -41,7 +41,23 @@ public class BannerService {
     public List<BannerResponse> getAllBanners(String categoryId, String ownerId) {
         List<Criteria> criteriaList = new ArrayList<>();
 
-        addAndIfNotNull(criteriaList, "categoryId", categoryId);
+        if (categoryId != null) {
+            System.out.println("1. Получаем дочерние категории");
+
+            List<String> childCategoryIds =
+                    categoryClient.getChildCategoryIds(categoryId);
+
+            System.out.println("2. Дочерние категории: " + childCategoryIds);
+
+            List<String> allCategoryIds = new ArrayList<>();
+            allCategoryIds.add(categoryId);
+            allCategoryIds.addAll(childCategoryIds);
+
+            criteriaList.add(
+                    Criteria.where("categoryId").in(allCategoryIds)
+            );
+        }
+
         addAndIfNotNull(criteriaList, "ownerId", ownerId);
 
         Query query = new Query();
@@ -51,13 +67,12 @@ public class BannerService {
 
         List<Banner> banners = mongoTemplate.find(query, Banner.class);
 
-        Map<String, CategoryResponse> categoryNames = categoryClient
-                .getCategoryNames(
-                        banners.stream()
-                                .map(Banner::getCategoryId)
-                                .distinct()
-                                .toList()
-                );
+        List<String> ids = banners.stream()
+                .map(Banner::getCategoryId)
+                .distinct()
+                .toList();
+
+        Map<String, CategoryResponse> categoryNames = categoryClient.getCategoryNames(ids);
 
         return banners.stream()
                 .map(banner -> MapperUtils.getBannerResponse(

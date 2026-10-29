@@ -1,0 +1,27 @@
+{
+  "2": {
+    "id": "2",
+    "name": "Electronics",
+    "parentId": null
+  },
+  "3": {
+    "id": "3",
+    "name": "Smartphones",
+    "parentId": "2"
+  },
+  "4": {
+    "id": "4",
+    "name": "Laptops",
+    "parentId": "2"
+  },
+  "5": {
+    "id": "5",
+    "name": "iPhone",
+    "parentId": "3"
+  },
+  "6": {
+    "id": "6",
+    "name": "Samsung",
+    "parentId": "3"
+  }
+}
