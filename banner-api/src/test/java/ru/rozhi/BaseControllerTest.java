@@ -25,8 +25,7 @@ public abstract class BaseControllerTest {
     @Container
     @ServiceConnection
     protected static MongoDBContainer mongoDBContainer = new MongoDBContainer(
-            DockerImageName.parse("mongo:8.3.11")
-    );
+            DockerImageName.parse("mongo:7.0"));
 
     @Autowired
     protected MockMvc mockMvc;
