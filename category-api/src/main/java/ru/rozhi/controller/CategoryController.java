@@ -48,6 +48,11 @@ public class CategoryController {
         return categoryService.getChildCategoryIds(id);
     }
 
+    @GetMapping("/directChildren" + CATEGORY_PATH)
+    public List<CategoryResponse> getDirectChildren(@PathVariable String id) {
+        return categoryService.getDirectChildren(id);
+    }
+
     @PostMapping
     public ResponseEntity<@NonNull CategoryResponse> createCategory(@RequestBody CategoryRequest category) {
         CategoryResponse createdCategory = categoryService.createCategory(category);

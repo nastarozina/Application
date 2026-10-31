@@ -42,12 +42,7 @@ public class BannerService {
         List<Criteria> criteriaList = new ArrayList<>();
 
         if (categoryId != null) {
-            System.out.println("1. Получаем дочерние категории");
-
-            List<String> childCategoryIds =
-                    categoryClient.getChildCategoryIds(categoryId);
-
-            System.out.println("2. Дочерние категории: " + childCategoryIds);
+            List<String> childCategoryIds = categoryClient.getChildCategoryIds(categoryId);
 
             List<String> allCategoryIds = new ArrayList<>();
             allCategoryIds.add(categoryId);
@@ -66,6 +61,10 @@ public class BannerService {
         }
 
         List<Banner> banners = mongoTemplate.find(query, Banner.class);
+
+        if (banners.isEmpty()) {
+            return List.of();
+        }
 
         List<String> ids = banners.stream()
                 .map(Banner::getCategoryId)

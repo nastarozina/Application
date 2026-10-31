@@ -37,6 +37,13 @@ public class CategoryService {
         return categories.stream().map(MapperUtils::getCategoryResponse).collect(Collectors.toList());
     }
 
+    public List<CategoryResponse> getDirectChildren(String parentId) {
+        List<Category> children = repository.findByParentId(parentId);
+        return children.stream()
+                .map(MapperUtils::getCategoryResponse)
+                .collect(Collectors.toList());
+    }
+
     public List<String> getChildCategoryIds(String id) {
         List<String> result = new ArrayList<>();
         Queue<String> queue = new LinkedList<>();
