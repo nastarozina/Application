@@ -49,7 +49,7 @@ public class CategoryControllerTest {
     @Container
     @ServiceConnection
     static MongoDBContainer mongoDBContainer = new MongoDBContainer(
-            DockerImageName.parse("mongo:8.3.11")
+            DockerImageName.parse("mongo:7.0")
     );
 
     @Autowired
@@ -227,17 +227,21 @@ public class CategoryControllerTest {
     @Test
     @SneakyThrows
     void shouldReturnCategoryChain() {
-        categoryRepository.save(Category.builder().id("root").name("ROOT").build());
-        categoryRepository.save(Category.builder().id("child1").name("CHILD1").parentId("root").build());
-        categoryRepository.save(Category.builder().id("child2").name("CHILD2").parentId("child1").build());
+        String rootId = "000000000000000000000001";
+        String child1Id = "000000000000000000000002";
+        String child2Id = "000000000000000000000003";
+
+        categoryRepository.save(Category.builder().id(rootId).name("ROOT").build());
+        categoryRepository.save(Category.builder().id(child1Id).name("CHILD1").parentId(rootId).build());
+        categoryRepository.save(Category.builder().id(child2Id).name("CHILD2").parentId(child1Id).build());
 
         List<CategoryResponse> expected = List.of(
-                new CategoryResponse("root", "ROOT", null),
-                new CategoryResponse("child1", "CHILD1", "root"),
-                new CategoryResponse("child2", "CHILD2", "child1")
+                new CategoryResponse(rootId, "ROOT", null),
+                new CategoryResponse(child1Id, "CHILD1", rootId),
+                new CategoryResponse(child2Id, "CHILD2", child1Id)
         );
 
-        MvcResult result = mockMvc.perform(get("/categories/child2"))
+        MvcResult result = mockMvc.perform(get("/categories/" + child2Id))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -250,28 +254,32 @@ public class CategoryControllerTest {
     @Test
     @SneakyThrows
     void shouldCacheCategoryChain() {
-        categoryRepository.save(Category.builder().id("root").name("ROOT").build());
-        categoryRepository.save(Category.builder().id("child1").name("CHILD1").parentId("root").build());
-        categoryRepository.save(Category.builder().id("child2").name("CHILD2").parentId("child1").build());
+        String rootId = "000000000000000000000001";
+        String child1Id = "000000000000000000000002";
+        String child2Id = "000000000000000000000003";
+
+        categoryRepository.save(Category.builder().id(rootId).name("ROOT").build());
+        categoryRepository.save(Category.builder().id(child1Id).name("CHILD1").parentId(rootId).build());
+        categoryRepository.save(Category.builder().id(child2Id).name("CHILD2").parentId(child1Id).build());
 
         Cache cache = cacheManager.getCache("categoryChains");
         assertThat(cache).isNotNull();
-        assertThat(cache.get("child2")).isNull();
+        assertThat(cache.get(child2Id)).isNull();
 
-        mockMvc.perform(get("/categories/child2"))
+        mockMvc.perform(get("/categories/" + child2Id))
                 .andExpect(status().isOk());
 
-        Cache.ValueWrapper cachedValue = cache.get("child2");
+        Cache.ValueWrapper cachedValue = cache.get(child2Id);
         assertThat(cachedValue).isNotNull();
         verify(categoryRepository, atLeastOnce()).findById(anyString());
         clearInvocations(categoryRepository);
 
         List<CategoryResponse> cachedResponse = (List<CategoryResponse>) cachedValue.get();
         assertThat(cachedResponse).hasSize(3);
-        assertThat(cachedResponse.get(0).id()).isEqualTo("root");
-        assertThat(cachedResponse.get(2).id()).isEqualTo("child2");
+        assertThat(cachedResponse.get(0).id()).isEqualTo(rootId);
+        assertThat(cachedResponse.get(2).id()).isEqualTo(child2Id);
 
-        MvcResult result2 = mockMvc.perform(get("/categories/child2"))
+        MvcResult result2 = mockMvc.perform(get("/categories/" + child2Id))
                 .andExpect(status().isOk())
                 .andReturn();
 

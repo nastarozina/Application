@@ -13,8 +13,10 @@ import ru.rozhi.utils.MapperUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +35,32 @@ public class CategoryService {
     public List<CategoryResponse> getAllCategories() {
         List<Category> categories = repository.findAll();
         return categories.stream().map(MapperUtils::getCategoryResponse).collect(Collectors.toList());
+    }
+
+    public List<CategoryResponse> getDirectChildren(String parentId) {
+        List<Category> children = repository.findByParentId(parentId);
+        return children.stream()
+                .map(MapperUtils::getCategoryResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<String> getChildCategoryIds(String id) {
+        List<String> result = new ArrayList<>();
+        Queue<String> queue = new LinkedList<>();
+        queue.add(id);
+
+        while (!queue.isEmpty()) {
+            String currentParentId = queue.poll();
+
+            List<Category> children = repository.findByParentId(currentParentId);
+
+            for (Category child : children) {
+                result.add(child.getId());
+                queue.add(child.getId());
+            }
+        }
+
+        return result;
     }
 
     public Map<String, CategoryResponse> getCategoryNames(List<String> categoryIds) {

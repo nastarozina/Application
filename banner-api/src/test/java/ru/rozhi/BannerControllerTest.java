@@ -1,5 +1,6 @@
 package ru.rozhi;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,9 @@ import ru.rozhi.repository.model.Banner;
 
 import java.util.List;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -270,6 +274,15 @@ public class BannerControllerTest extends BaseControllerTest {
                         List.of(new CategoryResponse("2", "Electronics", null)), List.of(), "owner2")
         );
 
+        stubFor(WireMock.get(urlEqualTo("/childIds/2"))
+                .willReturn(
+                        aResponse()
+                                .withStatus(200)
+                                .withHeader("Content-Type", "application/json")
+                                .withBody("[]")
+                )
+        );
+
         stubCategoryGetNames("response-4", HttpStatus.OK,  "2");
 
         MvcResult result = mockMvc.perform(get("/").queryParam("categoryId", "2"))
@@ -280,6 +293,57 @@ public class BannerControllerTest extends BaseControllerTest {
                 objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
 
         assertThat(response).isEqualTo(expected);
+    }
+
+    @Test
+    @SneakyThrows
+    void shouldReturnAllBannersByCategoryWithNestedChildren() {
+        bannerRepository.save(Banner.builder().id("banner1").name("NAME1").description("DESCRIPTION1").categoryId("2")
+                .ownerId("owner1").build());
+        bannerRepository.save(Banner.builder().id("banner2").name("NAME2").description("DESCRIPTION2").categoryId("3")
+                .ownerId("owner2").build());
+        bannerRepository.save(Banner.builder().id("banner3").name("NAME3").description("DESCRIPTION3").categoryId("4")
+                .ownerId("owner2").build());
+        bannerRepository.save(Banner.builder().id("banner4").name("NAME4").description("DESCRIPTION4").categoryId("5")
+                .ownerId("owner1").build());
+        bannerRepository.save(Banner.builder().id("banner5").name("NAME5").description("DESCRIPTION5").categoryId("6")
+                .ownerId("owner2").build());
+        bannerRepository.save(Banner.builder().id("banner6").name("NAME6").description("DESCRIPTION6").categoryId("7")
+                .ownerId("owner1").build());
+
+        stubFor(WireMock.get(urlEqualTo("/childIds/2"))
+                .willReturn(
+                        aResponse()
+                                .withStatus(200)
+                                .withHeader("Content-Type", "application/json")
+                                .withBody("[\"3\", \"4\", \"5\", \"6\"]")
+                )
+        );
+
+        stubCategoryGetNames("response-5", HttpStatus.OK, "2", "3", "4", "5", "6");
+
+        MvcResult result = mockMvc.perform(get("/").queryParam("categoryId", "2"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        List<BannerResponse> response =
+                objectMapper.readValue(result.getResponse().getContentAsString(), new TypeReference<>() {});
+
+        List<BannerResponse> expected = List.of(
+                new BannerResponse("banner1", "NAME1", "DESCRIPTION1",
+                        List.of(new CategoryResponse("2", "Electronics", null)), List.of(), "owner1"),
+                new BannerResponse("banner2", "NAME2", "DESCRIPTION2",
+                        List.of(new CategoryResponse("3", "Smartphones", "2")), List.of(), "owner2"),
+                new BannerResponse("banner3", "NAME3", "DESCRIPTION3",
+                        List.of(new CategoryResponse("4", "Laptops", "2")), List.of(), "owner2"),
+                new BannerResponse("banner4", "NAME4", "DESCRIPTION4",
+                        List.of(new CategoryResponse("5", "iPhone", "3")), List.of(), "owner1"),
+                new BannerResponse("banner5", "NAME5", "DESCRIPTION5",
+                        List.of(new CategoryResponse("6", "Samsung", "3")), List.of(), "owner2")
+        );
+
+        assertThat(response).hasSize(5);
+        assertThat(response).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     @Test

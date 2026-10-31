@@ -18,4 +18,7 @@ public interface CategoryClient {
     Map<String, CategoryResponse> getCategoryNames(
             @RequestParam("categoryId") List<String> categoryIds
     );
+
+    @GetExchange("/childIds/{id}")
+    List<String> getChildCategoryIds(@PathVariable String id);
 }
