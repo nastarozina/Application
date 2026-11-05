@@ -92,8 +92,6 @@ class MessageControllerTest {
         return message;
     }
 
-    // ------------------------------------------------------- GET /message/{userId}
-
     @Nested
     @DisplayName("GET /message/{userId} — последние сообщения")
     class GetLatestMessages {
@@ -179,8 +177,6 @@ class MessageControllerTest {
         }
     }
 
-    // ------------------------------------------------------- GET /message/{userId}?lastMessageId=
-
     @Nested
     @DisplayName("GET /message/{userId}?lastMessageId= — подгрузка старых")
     class GetMessagesBefore {
@@ -220,7 +216,6 @@ class MessageControllerTest {
         }
     }
 
-    // ------------------------------------------------------- GET /message/{userId}/new?since=
 
     @Nested
     @DisplayName("GET /message/{userId}/new?since= — новые сообщения")
@@ -257,7 +252,6 @@ class MessageControllerTest {
         }
     }
 
-    // ------------------------------------------------------- POST /message/{userId}
 
     @Nested
     @DisplayName("POST /message/{userId} — отправка сообщения")

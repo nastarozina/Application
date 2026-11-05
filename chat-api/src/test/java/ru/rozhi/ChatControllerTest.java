@@ -80,8 +80,6 @@ class ChatControllerTest {
         return chat;
     }
 
-    // ------------------------------------------------------- GET /
-
     @Nested
     @DisplayName("GET / — первая страница чатов")
     class GetChats {
@@ -163,8 +161,6 @@ class ChatControllerTest {
         }
     }
 
-    // ------------------------------------------------------- GET /?after= (Пагинация)
-
     @Nested
     @DisplayName("GET /?after= — пагинация по времени")
     class GetChatsPaginatedBySince {
@@ -217,8 +213,6 @@ class ChatControllerTest {
         }
     }
 
-    // ------------------------------------------------------- GET /new?since=
-
     @Nested
     @DisplayName("GET /new?since= — пуллинг обновлений")
     class GetChatsUpdatedSince {
@@ -258,8 +252,6 @@ class ChatControllerTest {
                     .andExpect(jsonPath("$.chats", hasSize(0)));
         }
     }
-
-    // ------------------------------------------------------- GET /{userId}
 
     @Nested
     @DisplayName("GET /{userId} — один чат")

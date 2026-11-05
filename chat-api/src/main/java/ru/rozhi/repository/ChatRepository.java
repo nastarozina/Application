@@ -14,10 +14,6 @@ public interface ChatRepository extends MongoRepository<Chat, String> {
 
     Optional<Chat> findByUserLowAndUserHigh(String userLow, String userHigh);
 
-    /**
-     * Первая страница: самые свежие чаты пользователя.
-     * ?0 = userId, ?1 = limit (size)
-     */
     @Aggregation(pipeline = {
             "{ $match: { $or: [ { 'userLow': ?0 }, { 'userHigh': ?0 } ] } }",
             "{ $sort: { 'lastModifiedAt': -1, '_id': -1 } }",
@@ -25,21 +21,15 @@ public interface ChatRepository extends MongoRepository<Chat, String> {
     })
     List<Chat> findLatestChatsByUser(String userId, int limit);
 
-    /**
-     * Следующие страницы: чаты, обновленные строго после указанного момента (after).
-     * ?0 = userId, ?1 = after (Instant), ?2 = limit (size)
-     */
+
     @Aggregation(pipeline = {
             "{ $match: { $or: [ { 'userLow': ?0 }, { 'userHigh': ?0 } ], 'lastModifiedAt': { $lt: ?1 } } }",
             "{ $sort: { 'lastModifiedAt': -1, '_id': -1 } }",
             "{ $limit: ?2 }"
     })
-    List<Chat> findChatsByUserSince(String userId, Instant after, int limit);
+    List<Chat> findChatsByUserUntil(String userId, Instant until, int limit);
 
-    /**
-     * Пуллинг: чаты, обновленные после указанного момента.
-     * ?0 = userId, ?1 = since (Instant)
-     */
+
     @Aggregation(pipeline = {
             "{ $match: { $or: [ { 'userLow': ?0 }, { 'userHigh': ?0 } ], 'lastModifiedAt': { $gt: ?1 } } }",
             "{ $sort: { 'lastModifiedAt': -1, '_id': -1 } }"

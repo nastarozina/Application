@@ -31,7 +31,6 @@ public class MessageService {
         Pageable pageable = PageRequest.of(0, size);
         List<Message> messages = messageRepository.findLatestMessages(chat.getId(), pageable);
 
-        // Помечаем чат как прочитанный
         chatService.markAsRead(initiatorUserId, targetUserId);
 
         return new MessagesResponse(

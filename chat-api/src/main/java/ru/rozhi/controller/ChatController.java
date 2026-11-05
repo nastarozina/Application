@@ -21,10 +21,10 @@ public class ChatController {
     @GetMapping
     public ChatsResponse getChats(
             @RequestHeader("X-User-Id") String initiatorUserId,
-            @RequestParam(required = false) Instant after,
+            @RequestParam(required = false) Instant until,
             @RequestParam(defaultValue = "50") int size
     ) {
-        return chatService.getChats(initiatorUserId, after, size);
+        return chatService.getChats(initiatorUserId, until, size);
     }
 
 

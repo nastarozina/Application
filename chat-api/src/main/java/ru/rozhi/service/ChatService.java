@@ -24,15 +24,15 @@ public class ChatService {
     @Autowired
     private ChatRepository chatRepository;
 
-    public ChatsResponse getChats(String initiatorUserId, Instant after, int size) {
+    public ChatsResponse getChats(String initiatorUserId, Instant until, int size) {
         List<Chat> chats;
 
-        if (after == null) {
+        if (until == null) {
             // Первая загрузка
             chats = chatRepository.findLatestChatsByUser(initiatorUserId, size);
         } else {
             // Подгрузка
-            chats = chatRepository.findChatsByUserSince(initiatorUserId, after, size);
+            chats = chatRepository.findChatsByUserUntil(initiatorUserId, until, size);
         }
 
         return new ChatsResponse(
