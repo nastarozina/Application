@@ -224,26 +224,26 @@ services:
 
 
   # ============================================================
-  # User API
+  # Chat API
   # ============================================================
 
-#  user-api:
-#    image: user-api:latest
-#    container_name: user-api
-#    restart: unless-stopped
-#
-#    environment:
-#      # MongoDB
-#      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/neAvito
-#
-#    depends_on:
-#      mongo:
-#        condition: service_started
-#
-#    networks:
-#      - infra-network
-#      - gateway-network
+  chat-api:
+    image: chat-api:0.1.0-SNAPSHOT
+    container_name: chat-api
+    restart: unless-stopped
 
+    environment:
+      # MongoDB
+      MONGODB_URI: mongodb://mongo:27017/neAvito
+      SERVER_PORT: 80
+
+    depends_on:
+      mongo:
+        condition: service_started
+
+    networks:
+      - infra-network
+      - gateway-network
 
 # ==============================================================
 # Volumes
