@@ -162,7 +162,7 @@ class ChatControllerTest {
     }
 
     @Nested
-    @DisplayName("GET /?after= — пагинация по времени")
+    @DisplayName("GET /?until= — пагинация по времени")
     class GetChatsPaginatedBySince {
 
         @Test
@@ -174,26 +174,22 @@ class ChatControllerTest {
             Chat chat4 = saveChat(ME, "user-14", NOW.minus(4, ChronoUnit.HOURS), "m4", ME, false);
             Chat chat5 = saveChat(ME, "user-15", NOW.minus(5, ChronoUnit.HOURS), "m5", ME, false);
 
-            // Первая страница (без after)
             mockMvc.perform(get("/").header(HEADER, ME).param("size", "2"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.chats", hasSize(2)))
                     .andExpect(jsonPath("$.chats[0].id").value(chat1.getId()))
                     .andExpect(jsonPath("$.chats[1].id").value(chat2.getId()));
 
-            // Вторая страница: передаем lastModifiedAt второго чата как after
-            // Ожидаем chat3 и chat4, так как их время строго меньше chat2
             mockMvc.perform(get("/").header(HEADER, ME)
-                            .param("after", chat2.getLastModifiedAt().toString())
+                            .param("until", chat2.getLastModifiedAt().toString())
                             .param("size", "2"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.chats", hasSize(2)))
                     .andExpect(jsonPath("$.chats[0].id").value(chat3.getId()))
                     .andExpect(jsonPath("$.chats[1].id").value(chat4.getId()));
 
-            // Третья страница
             mockMvc.perform(get("/").header(HEADER, ME)
-                            .param("after", chat4.getLastModifiedAt().toString())
+                            .param("until", chat4.getLastModifiedAt().toString())
                             .param("size", "2"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.chats", hasSize(1)))
@@ -206,7 +202,7 @@ class ChatControllerTest {
             saveChat(ME, HIGHER, NOW, "m", ME, false);
 
             mockMvc.perform(get("/").header(HEADER, ME)
-                            .param("after", NOW.minus(10, ChronoUnit.HOURS).toString())
+                            .param("until", NOW.minus(10, ChronoUnit.HOURS).toString())
                             .param("size", "50"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.chats", hasSize(0)));
