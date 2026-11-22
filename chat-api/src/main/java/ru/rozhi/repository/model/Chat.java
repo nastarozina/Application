@@ -17,12 +17,12 @@ import java.time.Instant;
         unique = true
 )
 @CompoundIndex(
-        name = "idx_chat_user_last_modified",
-        def = "{'userLow': 1, 'lastModifiedAt': -1}"
+        name = "idx_chat_user_last_message_at",
+        def = "{'userLow': 1, 'lastMessageAt': -1}"
 )
 @CompoundIndex(
-        name = "idx_chat_user_last_modified_2",
-        def = "{'userHigh': 1, 'lastModifiedAt': -1}"
+        name = "idx_chat_user_last_message_at_2",
+        def = "{'userHigh': 1, 'lastMessageAt': -1}"
 )
 @Data
 @Builder

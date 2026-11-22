@@ -16,23 +16,23 @@ public interface ChatRepository extends MongoRepository<Chat, String> {
 
     @Aggregation(pipeline = {
             "{ $match: { $or: [ { 'userLow': ?0 }, { 'userHigh': ?0 } ] } }",
-            "{ $sort: { 'lastModifiedAt': -1, '_id': -1 } }",
+            "{ $sort: { 'lastMessageAt': -1, '_id': -1 } }",
             "{ $limit: ?1 }"
     })
     List<Chat> findLatestChatsByUser(String userId, int limit);
 
 
     @Aggregation(pipeline = {
-            "{ $match: { $or: [ { 'userLow': ?0 }, { 'userHigh': ?0 } ], 'lastModifiedAt': { $lt: ?1 } } }",
-            "{ $sort: { 'lastModifiedAt': -1, '_id': -1 } }",
+            "{ $match: { $or: [ { 'userLow': ?0 }, { 'userHigh': ?0 } ], 'lastMessageAt': { $lt: ?1 } } }",
+            "{ $sort: { 'lastMessageAt': -1, '_id': -1 } }",
             "{ $limit: ?2 }"
     })
     List<Chat> findChatsByUserUntil(String userId, Instant until, int limit);
 
 
     @Aggregation(pipeline = {
-            "{ $match: { $or: [ { 'userLow': ?0 }, { 'userHigh': ?0 } ], 'lastModifiedAt': { $gt: ?1 } } }",
-            "{ $sort: { 'lastModifiedAt': -1, '_id': -1 } }"
+            "{ $match: { $or: [ { 'userLow': ?0 }, { 'userHigh': ?0 } ], 'lastMessageAt': { $gt: ?1 } } }",
+            "{ $sort: { 'lastMessageAt': -1, '_id': -1 } }"
     })
     List<Chat> findChatsUpdatedSince(String userId, Instant since);
 }
