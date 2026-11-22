@@ -37,13 +37,6 @@ spring:
                 - StripPrefix=2
                 - RemoveResponseHeader=Access-Control-Allow-Origin
 
-            #            - id: user-gateway
-            #              uri: http://user-api
-            #              predicates:
-            #                - Path=/api/user/**
-            #              filters:
-            #                - StripPrefix=2
-
             - id: banner-gateway
               uri: http://banner-api
               predicates:
@@ -55,6 +48,13 @@ spring:
               uri: http://category-api
               predicates:
                 - Path=/api/category/**
+              filters:
+                - StripPrefix=2
+
+            - id: chat-gateway
+              uri: http://chat-api
+              predicates:
+                - Path=/api/chat/**
               filters:
                 - StripPrefix=2
 
@@ -87,6 +87,10 @@ security:
       methods:
         - PUT
         - DELETE
+      access: authenticated
+
+    - paths:
+        - "/api/chat/**"
       access: authenticated
 
     - paths:
