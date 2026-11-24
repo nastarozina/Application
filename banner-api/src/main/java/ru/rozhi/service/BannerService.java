@@ -11,6 +11,7 @@ import ru.rozhi.controller.dto.BannerResponse;
 import ru.rozhi.controller.dto.CategoryResponse;
 import ru.rozhi.exception.BannerForbiddenException;
 import ru.rozhi.exception.BannerNotFoundException;
+import ru.rozhi.exception.InvalidBannerException;
 import ru.rozhi.repository.BannerRepository;
 import ru.rozhi.repository.model.Banner;
 import ru.rozhi.utils.MapperUtils;
@@ -88,7 +89,20 @@ public class BannerService {
     }
 
     public BannerResponse createBanner(BannerRequest banner, String userId) {
+        if (banner.name() == null || banner.name().isBlank()) {
+            throw new InvalidBannerException("Banner name is null or blank");
+        }
+
+        if (banner.description() == null) {
+            throw new InvalidBannerException("Banner description is null");
+        }
+
+        if (banner.categoryId() == null || banner.categoryId().isBlank()) {
+            throw new InvalidBannerException("Banner categoryId is null or blank");
+        }
+
         List<CategoryResponse> categories = categoryClient.getCategoryChain(banner.categoryId());
+
         Banner createdBanner = repository.save(Banner.builder()
                 .name(banner.name())
                 .description(banner.description())
