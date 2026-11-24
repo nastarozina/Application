@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.rozhi.controller.dto.UploadUrlRequest;
 import ru.rozhi.controller.dto.UploadUrlResponse;
+import ru.rozhi.exception.BannerForbiddenException;
 import ru.rozhi.exception.BannerNotFoundException;
 import ru.rozhi.exception.ImageNotFoundException;
 import ru.rozhi.exception.InvalidImageException;
@@ -13,6 +14,7 @@ import ru.rozhi.repository.model.Image;
 import ru.rozhi.repository.model.ImageStatus;
 import ru.rozhi.service.dto.UploadedImageInfo;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -26,11 +28,16 @@ public class ImageService {
 
     public UploadUrlResponse createUploadUrl(
             String bannerId,
-            UploadUrlRequest request
+            UploadUrlRequest request,
+            String userId
     ) {
 
         Banner banner = bannerRepository.findById(bannerId)
                 .orElseThrow(() -> new BannerNotFoundException(bannerId));
+
+        if (!banner.getOwnerId().equals(userId)) {
+            throw new BannerForbiddenException(bannerId);
+        }
 
         String imageId =
                 UUID.randomUUID().toString();
@@ -92,6 +99,37 @@ public class ImageService {
         image.setStatus(ImageStatus.UPLOADED);
         image.setSize(stat.size());
         image.setContentType(contentType);
+
+        bannerRepository.save(banner);
+    }
+
+    public void deleteImage(String bannerId, String imageId, String userId) {
+        Banner banner = bannerRepository.findById(bannerId)
+                .orElseThrow(() -> new BannerNotFoundException(bannerId));
+
+        if (!banner.getOwnerId().equals(userId)) {
+            throw new BannerForbiddenException(bannerId);
+        }
+
+        List<Image> images = banner.getImages();
+
+        Image image = images
+                .stream()
+                .filter(i -> i.getId().equals(imageId))
+                .findFirst()
+                .orElseThrow(() -> new ImageNotFoundException(bannerId, imageId));
+
+        if (image.getStatus() == ImageStatus.PENDING) {
+            return;
+        }
+
+        imageStorageService.deleteImage(image.getObjectKey());
+
+        images.remove(image.getPosition().intValue());
+
+        for (int i = image.getPosition(); i < images.size(); i++) {
+            images.get(i).setPosition(i);
+        }
 
         bannerRepository.save(banner);
     }

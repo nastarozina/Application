@@ -70,6 +70,10 @@ security:
   default-access: permit
   routes:
     - paths:
+        - "/api/banner/admin/**"
+      access: "role:ADMIN"
+
+    - paths:
         - "/api/banner/**"
         - "/api/category/**"
       methods:
@@ -80,22 +84,18 @@ security:
         - "/api/banner/**"
       methods:
         - POST
+        - DELETE
       access: authenticated
 
     - paths:
         - "/api/banner/*"
       methods:
         - PUT
-        - DELETE
       access: authenticated
 
     - paths:
         - "/api/chat/**"
       access: authenticated
-
-    - paths:
-        - "/api/banner/admin/**"
-      access: "role:ADMIN"
 
     - paths:
         - "/api/category/**"
