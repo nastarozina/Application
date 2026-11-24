@@ -127,6 +127,40 @@ public class BannerControllerTest extends BaseControllerTest {
 
     @Test
     @SneakyThrows
+    void shouldNotCreateBannerBecauseOfInvalidData() {
+        BannerRequest bannerRequest = new BannerRequest("    ", "DESCRIPTION2", "1");
+
+        MvcResult result = createBanner(bannerRequest, "")
+                .andExpect(status().isBadRequest())
+                .andExpect(header().doesNotExist("Location"))
+                .andReturn();
+
+        ApiErrorResponse response = getResponse(result, ApiErrorResponse.class);
+
+        assertThat(response.code()).isEqualTo("INVALID_BANNER");
+        assertThat(response.message()).isEqualTo("Banner name is null or blank");
+
+        Banner banner = bannerRepository.findByName("    ").orElse(null);
+        assertThat(banner).isNull();
+
+        BannerRequest bannerRequest2 = new BannerRequest("NAME2", "DESCRIPTION2", null);
+
+        MvcResult result2 = createBanner(bannerRequest2, "")
+                .andExpect(status().isBadRequest())
+                .andExpect(header().doesNotExist("Location"))
+                .andReturn();
+
+        ApiErrorResponse response2 = getResponse(result2, ApiErrorResponse.class);
+
+        assertThat(response2.code()).isEqualTo("INVALID_BANNER");
+        assertThat(response2.message()).isEqualTo("Banner categoryId is null or blank");
+
+        Banner banner2 = bannerRepository.findByName("NAME2").orElse(null);
+        assertThat(banner2).isNull();
+    }
+
+    @Test
+    @SneakyThrows
     void shouldNotCreateBannerBecauseCategoryNotFound() {
         BannerRequest bannerRequest = new BannerRequest("NAME2", "DESCRIPTION2", "1");
 

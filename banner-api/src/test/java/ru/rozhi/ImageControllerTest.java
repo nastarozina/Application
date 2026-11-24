@@ -36,6 +36,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -61,6 +62,7 @@ public class ImageControllerTest extends BaseControllerTest {
 
     @BeforeEach
     public void setUp() {
+        bannerRepository.deleteAll();
         String bucket = storageProperties.getBucket();
 
         var response = s3Client.listObjectsV2(
@@ -98,7 +100,7 @@ public class ImageControllerTest extends BaseControllerTest {
                 List.of(new CategoryResponse("1", "Electronics", null))
         );
         MvcResult createResult = mockMvc.perform(
-                        post("/").header("X-User-Id", "")
+                        post("/").header("X-User-Id", "owner-1")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(bannerRequest))
                 )
@@ -112,6 +114,7 @@ public class ImageControllerTest extends BaseControllerTest {
 
         MvcResult uploadUrlResult1 = mockMvc.perform(
                         post("/{bannerId}/images/upload-url", bannerId)
+                                .header("X-User-Id", "owner-1")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(uploadUrlRequest1))
                 )
@@ -133,6 +136,7 @@ public class ImageControllerTest extends BaseControllerTest {
 
         MvcResult uploadUrlResult2 = mockMvc.perform(
                         post("/{bannerId}/images/upload-url", bannerId)
+                                .header("X-User-Id", "owner-1")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(uploadUrlRequest2))
                 )
@@ -193,6 +197,105 @@ public class ImageControllerTest extends BaseControllerTest {
         assertThat(images.get(1).getPosition()).isEqualTo(1);
         assertThat(images.getFirst().getSize()).isGreaterThan(0);
         assertThat(images.get(1).getStatus()).isEqualTo(ImageStatus.UPLOADED);
+    }
+
+    @Test
+    @SneakyThrows
+    public void deleteUploadedImage() {
+        BannerRequest bannerRequest =
+                new BannerRequest("NAME1", "DESCRIPTION1", "1");
+
+        when(categoryClient.getCategoryChain("1")).thenReturn(
+                List.of(new CategoryResponse("1", "Electronics", null))
+        );
+
+        MvcResult createResult = mockMvc.perform(
+                        post("/")
+                                .header("X-User-Id", "owner-1")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(bannerRequest))
+                )
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String bannerId = getResponse(createResult, BannerResponse.class).id();
+
+        String[] contentTypes = {"image/jpeg", "image/png"};
+        String[] fileNames = {
+                "__files/test-image.jpg",
+                "__files/test-image2.png"
+        };
+
+        UploadUrlResponse[] uploaded = new UploadUrlResponse[2];
+
+        for (int i = 0; i < uploaded.length; i++) {
+            MvcResult uploadUrlResult = mockMvc.perform(
+                            post("/{bannerId}/images/upload-url", bannerId)
+                                    .header("X-User-Id", "owner-1")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(
+                                            new UploadUrlRequest(contentTypes[i])
+                                    ))
+                    )
+                    .andExpect(status().isOk())
+                    .andReturn();
+
+            uploaded[i] = getResponse(uploadUrlResult, UploadUrlResponse.class);
+
+            uploadImage(fileNames[i], contentTypes[i], uploaded[i].uploadUrl());
+
+            mockMvc.perform(
+                            post("/{bannerId}/images/{imageId}/complete",
+                                    bannerId, uploaded[i].imageId())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                    )
+                    .andExpect(status().isOk());
+        }
+
+        UploadUrlResponse first = uploaded[0];
+        UploadUrlResponse second = uploaded[1];
+
+        List<Image> before = bannerRepository.findById(bannerId)
+                .orElseThrow()
+                .getImages();
+
+        assertThat(before).extracting(Image::getId)
+                .containsExactly(first.imageId(), second.imageId());
+        assertThat(before).extracting(Image::getStatus)
+                .containsExactly(ImageStatus.UPLOADED, ImageStatus.UPLOADED);
+
+
+        mockMvc.perform(
+                        delete("/{bannerId}/images/{imageId}", bannerId, first.imageId())
+                                .header("X-User-Id", "owner-1")
+                )
+                .andExpect(status().isOk());
+
+        // в Mongo осталось только второе фото, position пересчитан
+        List<Image> after = bannerRepository.findById(bannerId)
+                .orElseThrow()
+                .getImages();
+
+        assertThat(after).hasSize(1);
+        assertThat(after.getFirst().getId()).isEqualTo(second.imageId());
+        assertThat(after.getFirst().getObjectKey()).isEqualTo(second.objectKey());
+        assertThat(after.getFirst().getPosition()).isZero();
+        assertThat(after.getFirst().getStatus()).isEqualTo(ImageStatus.UPLOADED);
+
+        // объект удалён из S3, второй остался
+        List<String> keys = s3Client.listObjectsV2(
+                        ListObjectsV2Request.builder()
+                                .bucket(storageProperties.getBucket())
+                                .build()
+                )
+                .contents()
+                .stream()
+                .map(S3Object::key)
+                .toList();
+
+        assertThat(keys)
+                .doesNotContain(first.objectKey())
+                .contains(second.objectKey());
     }
 
     @SneakyThrows
